@@ -36,7 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await ApiService.saveAuth(
         data['access_token'] ?? 'token',
         'admin',
-        _usernameCtrl.text.trim(),
+        data['username'] ?? _usernameCtrl.text.trim(),
+        data['nama'] ?? _usernameCtrl.text.trim(),
       );
       if (!mounted) return;
       Navigator.pushReplacement(

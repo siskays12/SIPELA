@@ -8,11 +8,14 @@ const String baseUrl = 'http://127.0.0.1:8000';
 
 class ApiService {
   // ─── Auth Storage ─────────────────────────────
-  static Future<void> saveAuth(String token, String role, String username) async {
+  static Future<void> saveAuth(String token, String role, String username, [String? fullName]) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     await prefs.setString('role', role);
     await prefs.setString('username', username);
+    if (fullName != null && fullName.isNotEmpty) {
+      await prefs.setString('full_name', fullName);
+    }
   }
 
   static Future<String?> getToken() async {
@@ -35,10 +38,28 @@ class ApiService {
     return prefs.getString('full_name');
   }
 
-  static Future<void> updateProfile({required String fullName, required String username}) async {
+  static Future<dynamic> updateProfile({required String fullName, required String username}) async {
+    // 1. Simpan ke database melalui endpoint PUT /me
+    final res = await put('/me', {
+      'nama': fullName,
+      'username': username,
+    });
+
+    // 2. Perbarui local preferences & token baru jika username berubah
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('full_name', fullName);
     await prefs.setString('username', username);
+    if (res is Map && res['access_token'] != null) {
+      await prefs.setString('token', res['access_token'].toString());
+    }
+    return res;
+  }
+
+  static Future<dynamic> changePassword({required String oldPassword, required String newPassword}) async {
+    return await put('/change-password', {
+      'old_password': oldPassword,
+      'new_password': newPassword,
+    });
   }
 
   static Future<void> clearAuth() async {

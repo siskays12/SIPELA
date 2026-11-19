@@ -40,18 +40,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     setState(() => _loading = true);
     try {
+      // Ambil data profil langsung dari database melalui API /me
+      final me = await ApiService.get('/me');
+      if (me is Map<String, dynamic>) {
+        final nama = me['nama'] as String? ?? 'Administrator';
+        final username = me['username'] as String? ?? 'admin';
+
+        if (mounted) {
+          setState(() {
+            _fullName = nama;
+            _username = username;
+            _nameController.text = nama;
+            _usernameController.text = username;
+            _loading = false;
+          });
+          return;
+        }
+      }
+      throw Exception('Data profil tidak valid');
+    } catch (_) {
+      // Fallback ke penyimpanan lokal jika offline
       final username = await ApiService.getUsername();
       final fullName = await ApiService.getFullName();
-      setState(() {
-        _username = username ?? 'admin';
-        _fullName = fullName ?? (_username == 'admin' ? 'Bambang Sudarmono, S.T., M.Kom.' : _username);
-        _nameController.text = _fullName;
-        _usernameController.text = _username;
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() => _loading = false);
-      if (mounted) showError(context, e.toString());
+      if (mounted) {
+        setState(() {
+          _username = username ?? 'admin';
+          _fullName = fullName ?? _username;
+          _nameController.text = _fullName;
+          _usernameController.text = _username;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -63,21 +82,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final newName = _nameController.text.trim();
       final newUsername = _usernameController.text.trim().toLowerCase();
 
+      // Kirim pembaruan ke backend (database)
       await ApiService.updateProfile(fullName: newName, username: newUsername);
 
-      setState(() {
-        _fullName = newName;
-        _username = newUsername;
-        _savingProfile = false;
-        _isEditing = false;
-      });
-
       if (mounted) {
-        showSuccess(context, 'Profil berhasil diperbarui!');
+        setState(() {
+          _fullName = newName;
+          _username = newUsername;
+          _savingProfile = false;
+          _isEditing = false;
+        });
+        showSuccess(context, 'Profil berhasil diperbarui dan tersimpan di database!');
       }
     } catch (e) {
-      setState(() => _savingProfile = false);
-      if (mounted) showError(context, e.toString());
+      if (mounted) {
+        setState(() => _savingProfile = false);
+        showError(context, e.toString());
+      }
     }
   }
 
@@ -151,8 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Kata sandi lama wajib diisi';
-                        if (v != 'admin123') return 'Kata sandi saat ini tidak sesuai';
+                        if (v == null || v.isEmpty) return 'Kata sandi saat ini wajib diisi';
                         return null;
                       },
                     ),
@@ -223,10 +243,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: () async {
                             if (!formKey.currentState!.validate()) return;
                             setS(() => saving = true);
-                            await Future.delayed(const Duration(milliseconds: 300));
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            if (mounted) {
-                              showSuccess(context, 'Kata sandi berhasil diperbarui!');
+                            try {
+                              // Kirim ke backend (database)
+                              await ApiService.changePassword(
+                                oldPassword: oldPassCtrl.text,
+                                newPassword: newPassCtrl.text,
+                              );
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (mounted) {
+                                showSuccess(context, 'Kata sandi berhasil diperbarui di database!');
+                              }
+                            } catch (e) {
+                              if (ctx.mounted) {
+                                showError(context, e.toString());
+                              }
+                            } finally {
+                              setS(() => saving = false);
                             }
                           },
                         ),
