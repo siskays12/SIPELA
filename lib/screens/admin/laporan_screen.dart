@@ -1,5 +1,11 @@
 // lib/screens/admin/laporan_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:excel/excel.dart' as ex;
 import '../../core/api_service.dart';
 import '../../models/loan_model.dart';
 import '../../models/tool_model.dart';
@@ -17,6 +23,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
   List<Tool> _tools = [];
   int _customerCount = 0;
   bool _loading = true;
+  bool _exporting = false;
 
   @override
   void initState() {
@@ -48,6 +55,327 @@ class _LaporanScreenState extends State<LaporanScreen> {
     }
   }
 
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+  Future<void> _exportPdf() async {
+    setState(() => _exporting = true);
+    try {
+      final totalPinjam = _loans.length;
+      final sedangDipinjam = _loans.where((l) => l.status == 'dipinjam').length;
+      final selesai = _loans.where((l) => l.status == 'selesai').length;
+      int totalStokFisik = 0;
+      int totalStokTersedia = 0;
+      for (var t in _tools) {
+        totalStokFisik += t.stokTotal;
+        totalStokTersedia += t.stokTersedia;
+      }
+
+      // Frekuensi alat
+      final Map<int, int> toolFreq = {};
+      for (var loan in _loans) {
+        for (var item in loan.daftarAlat) {
+          if (item.idTool != null) {
+            toolFreq[item.idTool!] = (toolFreq[item.idTool!] ?? 0) + item.jumlah;
+          }
+        }
+      }
+      final sortedToolEntries = toolFreq.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      final pdf = pw.Document();
+      final now = DateTime.now();
+      final tanggalCetak =
+          '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}  ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context ctx) => [
+            // Header
+            pw.Container(
+              padding: const pw.EdgeInsets.all(16),
+              decoration: const pw.BoxDecoration(
+                color: PdfColors.blue800,
+                borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'SIPELA — Statistik & Laporan Lab',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    'UPT Laboratorium  •  Dicetak: $tanggalCetak',
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.white),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 20),
+
+            // Ringkasan Metrik
+            pw.Text('Ringkasan Statistik',
+                style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 8),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2),
+                1: const pw.FlexColumnWidth(1),
+              },
+              children: [
+                _pdfHeaderRow(['Metrik', 'Nilai']),
+                _pdfDataRow(['Total Peminjaman', '$totalPinjam transaksi']),
+                _pdfDataRow(['Sedang Dipinjam', '$sedangDipinjam aktif']),
+                _pdfDataRow(['Peminjaman Selesai', '$selesai selesai']),
+                _pdfDataRow(['Total Stok Fisik', '$totalStokFisik unit']),
+                _pdfDataRow(['Stok Tersedia', '$totalStokTersedia unit']),
+                _pdfDataRow(['Jumlah Jenis Alat', '${_tools.length} jenis']),
+                _pdfDataRow(['Data Mahasiswa', '$_customerCount mahasiswa']),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+
+            // Kondisi Alat
+            pw.Text('Kondisi Inventaris Alat',
+                style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 8),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2),
+                1: const pw.FlexColumnWidth(1),
+                2: const pw.FlexColumnWidth(1),
+              },
+              children: [
+                _pdfHeaderRow(['Nama Alat', 'Stok Total', 'Kondisi']),
+                ..._tools.map((t) => _pdfDataRow([
+                      t.namaAlat,
+                      '${t.stokTotal} unit',
+                      t.kondisi,
+                    ])),
+              ],
+            ),
+
+            if (sortedToolEntries.isNotEmpty) ...[
+              pw.SizedBox(height: 20),
+              pw.Text('Top 5 Alat Paling Sering Dipinjam',
+                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 8),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(28),
+                  1: const pw.FlexColumnWidth(3),
+                  2: const pw.FlexColumnWidth(1),
+                },
+                children: [
+                  _pdfHeaderRow(['#', 'Nama Alat', 'Frekuensi']),
+                  ...sortedToolEntries.take(5).map((entry) {
+                    final rank = sortedToolEntries.indexOf(entry) + 1;
+                    final tool = _tools.firstWhere(
+                      (t) => t.idTool == entry.key,
+                      orElse: () => Tool(
+                        idTool: 0,
+                        kodeAlat: '',
+                        namaAlat: 'Alat #${entry.key}',
+                        stokTotal: 0,
+                        stokTersedia: 0,
+                        kondisi: 'baik',
+                      ),
+                    );
+                    return _pdfDataRow(['$rank', tool.namaAlat, '${entry.value}x']);
+                  }),
+                ],
+              ),
+            ],
+
+            pw.SizedBox(height: 20),
+            // Riwayat Peminjaman (20 terbaru)
+            pw.Text('Riwayat Peminjaman (20 Terbaru)',
+                style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 8),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              columnWidths: {
+                0: const pw.FixedColumnWidth(28),
+                1: const pw.FlexColumnWidth(2),
+                2: const pw.FlexColumnWidth(2),
+                3: const pw.FlexColumnWidth(1),
+              },
+              children: [
+                _pdfHeaderRow(['ID', 'Mahasiswa', 'Tanggal Pinjam', 'Status']),
+                ..._loans.take(20).map((l) => _pdfDataRow([
+                      '#${l.idLoan}',
+                      '${l.namaMahasiswa}\n${l.nimMahasiswa}',
+                      formatDate(l.tanggalPinjam),
+                      l.status,
+                    ])),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/laporan_sipela_${now.millisecondsSinceEpoch}.pdf');
+      await file.writeAsBytes(await pdf.save());
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Laporan SIPELA',
+          files: [XFile(file.path)],
+        ),
+      );
+    } catch (e) {
+      if (mounted) showError(context, 'Gagal ekspor PDF: $e');
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  // ── Export Excel ───────────────────────────────────────────────────────────
+  Future<void> _exportExcel() async {
+    setState(() => _exporting = true);
+    try {
+      final excel = ex.Excel.createExcel();
+
+      // Sheet 1: Statistik
+      final statSheet = excel['Statistik'];
+      excel.setDefaultSheet('Statistik');
+      final totalPinjam = _loans.length;
+      final sedangDipinjam = _loans.where((l) => l.status == 'dipinjam').length;
+      final selesai = _loans.where((l) => l.status == 'selesai').length;
+      int totalStokFisik = 0;
+      int totalStokTersedia = 0;
+      for (var t in _tools) {
+        totalStokFisik += t.stokTotal;
+        totalStokTersedia += t.stokTersedia;
+      }
+
+      _excelHeader(statSheet, 0, ['Metrik', 'Nilai']);
+      final statsRows = [
+        ['Total Peminjaman', totalPinjam],
+        ['Sedang Dipinjam', sedangDipinjam],
+        ['Peminjaman Selesai', selesai],
+        ['Total Stok Fisik (unit)', totalStokFisik],
+        ['Stok Tersedia (unit)', totalStokTersedia],
+        ['Jumlah Jenis Alat', _tools.length],
+        ['Data Mahasiswa', _customerCount],
+      ];
+      for (var i = 0; i < statsRows.length; i++) {
+        statSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+          ..value = ex.TextCellValue(statsRows[i][0] as String);
+        statSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+          ..value = ex.IntCellValue(statsRows[i][1] as int);
+      }
+
+      // Sheet 2: Inventaris
+      final invSheet = excel['Inventaris'];
+      _excelHeader(invSheet, 0, ['ID', 'Kode', 'Nama Alat', 'Stok Total', 'Stok Tersedia', 'Kondisi']);
+      for (var i = 0; i < _tools.length; i++) {
+        final t = _tools[i];
+        final row = i + 1;
+        invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+          ..value = ex.IntCellValue(t.idTool);
+        invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
+          ..value = ex.TextCellValue(t.kodeAlat);
+        invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
+          ..value = ex.TextCellValue(t.namaAlat);
+        invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
+          ..value = ex.IntCellValue(t.stokTotal);
+        invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
+          ..value = ex.IntCellValue(t.stokTersedia);
+        invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row))
+          ..value = ex.TextCellValue(t.kondisi);
+      }
+
+      // Sheet 3: Riwayat Peminjaman
+      final loanSheet = excel['Peminjaman'];
+      _excelHeader(loanSheet, 0, [
+        'ID', 'Nama Mahasiswa', 'NIM', 'Program Studi',
+        'Tgl Pinjam', 'Tgl Rencana Kembali', 'Status'
+      ]);
+      for (var i = 0; i < _loans.length; i++) {
+        final l = _loans[i];
+        final row = i + 1;
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+          ..value = ex.IntCellValue(l.idLoan);
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
+          ..value = ex.TextCellValue(l.namaMahasiswa);
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
+          ..value = ex.TextCellValue(l.nimMahasiswa);
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
+          ..value = ex.TextCellValue(l.prodiMahasiswa);
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
+          ..value = ex.TextCellValue(formatDate(l.tanggalPinjam));
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row))
+          ..value = ex.TextCellValue(formatDate(l.tanggalRencanaKembali));
+        loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: row))
+          ..value = ex.TextCellValue(l.status);
+      }
+
+      final now = DateTime.now();
+      final fileBytes = excel.save();
+      if (fileBytes == null) throw Exception('Gagal generate file Excel');
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/laporan_sipela_${now.millisecondsSinceEpoch}.xlsx');
+      await file.writeAsBytes(fileBytes);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Laporan SIPELA Excel',
+          files: [XFile(file.path)],
+        ),
+      );
+    } catch (e) {
+      if (mounted) showError(context, 'Gagal ekspor Excel: $e');
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  // ── Helpers PDF ────────────────────────────────────────────────────────────
+  pw.TableRow _pdfHeaderRow(List<String> cells) {
+    return pw.TableRow(
+      decoration: const pw.BoxDecoration(color: PdfColors.blue50),
+      children: cells
+          .map((c) => pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                child: pw.Text(c,
+                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+              ))
+          .toList(),
+    );
+  }
+
+  pw.TableRow _pdfDataRow(List<String> cells) {
+    return pw.TableRow(
+      children: cells
+          .map((c) => pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: pw.Text(c, style: const pw.TextStyle(fontSize: 9)),
+              ))
+          .toList(),
+    );
+  }
+
+  // ── Helpers Excel ──────────────────────────────────────────────────────────
+  void _excelHeader(ex.Sheet sheet, int row, List<String> headers) {
+    for (var i = 0; i < headers.length; i++) {
+      sheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row))
+        ..value = ex.TextCellValue(headers[i]);
+    }
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -62,16 +390,14 @@ class _LaporanScreenState extends State<LaporanScreen> {
     final selesai = _loans.where((l) => l.status == 'selesai').length;
     final terlambat = _loans.where((l) => l.isTerlambat).toList();
 
-    // Hitung stok total unit fisik dan stok tersedia
     int totalStokFisik = 0;
     int totalStokTersedia = 0;
     for (var t in _tools) {
       totalStokFisik += t.stokTotal;
       totalStokTersedia += t.stokTersedia;
     }
-    final totalStokDipinjam = (totalStokFisik - totalStokTersedia).clamp(0, totalStokFisik);
 
-    // Hitung alat paling sering dipinjam
+    // Alat paling sering dipinjam
     final Map<int, int> toolFreq = {};
     for (var loan in _loans) {
       for (var item in loan.daftarAlat) {
@@ -88,35 +414,6 @@ class _LaporanScreenState extends State<LaporanScreen> {
     final rawatCount = _tools.where((t) => t.kondisi == 'perawatan').length;
     final rusakCount = _tools.where((t) => t.kondisi == 'rusak').length;
 
-    // Distribusi Peminjaman per Program Studi
-    final Map<String, int> prodiMap = {};
-    for (var l in _loans) {
-      final p = l.prodiMahasiswa.trim();
-      if (p.isNotEmpty && p != '-') {
-        // Ambil nama prodi yang rapi
-        final cleanP = p.replaceAll('(D4)', '').replaceAll('(D3)', '').trim();
-        prodiMap[cleanP] = (prodiMap[cleanP] ?? 0) + 1;
-      }
-    }
-    final sortedProdi = prodiMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    // Distribusi Kategori Alat
-    final Map<String, int> kategoriMap = {};
-    for (var t in _tools) {
-      final k = t.kategori.trim();
-      if (k.isNotEmpty) {
-        kategoriMap[k] = (kategoriMap[k] ?? 0) + 1;
-      }
-    }
-    final sortedKategori = kategoriMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    // Persentase utilisasi stok
-    final double utilPercent = totalStokFisik > 0
-        ? (totalStokDipinjam / totalStokFisik)
-        : 0.0;
-
     return Scaffold(
       backgroundColor: kBackground,
       body: RefreshIndicator(
@@ -128,14 +425,14 @@ class _LaporanScreenState extends State<LaporanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── 1. Header Ringkasan Statistik ──────────────────
+              // ── 1. Header + Tombol Ekspor ───────────────────────
               Row(
                 children: [
                   const Icon(Icons.analytics_outlined, size: 20, color: kBrandPrimary),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Statistik & Laporan Laboratorium',
+                      'Statistik & Laporan Lab',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kTextMain),
                     ),
                   ),
@@ -152,7 +449,53 @@ class _LaporanScreenState extends State<LaporanScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+
+              // ── Tombol Ekspor PDF & Excel ───────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _exporting ? null : _exportPdf,
+                      icon: _exporting
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                      label: const Text('Ekspor PDF', style: TextStyle(fontSize: 12.5)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFDC2626),
+                        side: const BorderSide(color: Color(0xFFDC2626)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _exporting ? null : _exportExcel,
+                      icon: _exporting
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.table_chart_outlined, size: 16),
+                      label: const Text('Ekspor Excel', style: TextStyle(fontSize: 12.5)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF16A34A),
+                        side: const BorderSide(color: Color(0xFF16A34A)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
 
               // ── 2. Grid 4 Kartu Metrik Utama ──────────────────
               Row(
@@ -244,54 +587,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // ── 4. Utilisasi & Ketersediaan Stok Lab ─────────────
-              const Text(
-                'Ketersediaan & Utilisasi Stok Lab',
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
-              ),
-              const SizedBox(height: 8),
-              CleanCard(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${(utilPercent * 100).toStringAsFixed(1)}% Stok Sedang Dipakai',
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: kTextMain),
-                        ),
-                        Text(
-                          '$totalStokDipinjam dari $totalStokFisik unit',
-                          style: const TextStyle(fontSize: 11.5, color: kTextMuted, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: totalStokFisik > 0 ? utilPercent : 0.0,
-                        backgroundColor: const Color(0xFFE2E8F0),
-                        valueColor: const AlwaysStoppedAnimation<Color>(kBrandAccent),
-                        minHeight: 8,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _dotIndicator(color: kColorSuccess, label: 'Siap Dipinjam ($totalStokTersedia unit)'),
-                        const Spacer(),
-                        _dotIndicator(color: kBrandAccent, label: 'Dipinjam ($totalStokDipinjam unit)'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-
-              // ── 5. Ringkasan Kondisi Fisik Alat ────────────────
+              // ── 4. Ringkasan Kondisi Fisik Alat ────────────────
               const Text(
                 'Status Kondisi Fisik Inventaris',
                 style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
@@ -332,7 +628,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
               ),
               const SizedBox(height: 18),
 
-              // ── 6. Alat Paling Sering Dipinjam ──────────────────
+              // ── 5. Alat Paling Sering Dipinjam ──────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -441,131 +737,10 @@ class _LaporanScreenState extends State<LaporanScreen> {
                         }).toList(),
                       ),
               ),
-              const SizedBox(height: 18),
-
-              // ── 7. Peminjaman Berdasarkan Program Studi ─────────
-              if (sortedProdi.isNotEmpty) ...[
-                const Text(
-                  'Aktivitas Peminjaman per Program Studi',
-                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
-                ),
-                const SizedBox(height: 8),
-                CleanCard(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: sortedProdi.take(4).map((e) {
-                      final maxProdi = sortedProdi.first.value;
-                      final ratio = maxProdi > 0 ? (e.value / maxProdi) : 0.0;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    e.key,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${e.value}x pinjam',
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kBrandAccent),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: ratio,
-                                backgroundColor: const Color(0xFFF1F5F9),
-                                valueColor: const AlwaysStoppedAnimation<Color>(kBrandAccent),
-                                minHeight: 6,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 18),
-              ],
-
-              // ── 8. Distribusi Inventaris per Kategori ───────────
-              if (sortedKategori.isNotEmpty) ...[
-                const Text(
-                  'Sebaran Inventaris per Kategori Alat',
-                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
-                ),
-                const SizedBox(height: 8),
-                CleanCard(
-                  padding: const EdgeInsets.all(12),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: sortedKategori.map((k) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: kBorder),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              k.key,
-                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: kTextMain),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEFF6FF),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${k.value}',
-                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: kBrandAccent),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _dotIndicator({required Color color, required String label}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: kTextMuted, fontWeight: FontWeight.w500),
-        ),
-      ],
     );
   }
 
