@@ -26,7 +26,7 @@ class _MainScreenState extends State<MainScreen> {
     _NavItem('Ringkasan', Icons.grid_view_outlined, Icons.grid_view, DashboardScreen()),
     _NavItem('Alat Lab', Icons.inventory_2_outlined, Icons.inventory_2, AlatScreen()),
     _NavItem('Peminjaman', Icons.assignment_outlined, Icons.assignment, PeminjamanAdminScreen()),
-    _NavItem('Pengembalian', Icons.assignment_return_outlined, Icons.assignment_return, PengembalianScreen()),
+    _NavItem('Riwayat', Icons.history_outlined, Icons.history, PengembalianScreen()),
     _NavItem('Laporan', Icons.analytics_outlined, Icons.analytics, LaporanScreen()),
   ];
 

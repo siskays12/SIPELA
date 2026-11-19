@@ -80,7 +80,7 @@ class _LaporanScreenState extends State<LaporanScreen> with SingleTickerProvider
               indicatorWeight: 2.5,
               tabs: const [
                 Tab(text: 'Statistik & Laporan Lab'),
-                Tab(text: 'Semua Riwayat Transaksi'),
+                Tab(text: 'Semua Riwayat'),
               ],
             ),
           ),
@@ -351,7 +351,7 @@ class _LaporanScreenState extends State<LaporanScreen> with SingleTickerProvider
 
         Expanded(
           child: filtered.isEmpty
-              ? const EmptyState(icon: Icons.history, title: 'Tidak ada riwayat transaksi')
+              ? const EmptyState(icon: Icons.history, title: 'Tidak ada riwayat peminjaman')
               : RefreshIndicator(
                   onRefresh: _loadData,
                   color: kBrandAccent,
@@ -371,7 +371,7 @@ class _LaporanScreenState extends State<LaporanScreen> with SingleTickerProvider
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Transaksi #${loan.idLoan}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain)),
+                                Text('Riwayat #${loan.idLoan}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain)),
                                 if (loan.isTerlambat)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -384,10 +384,10 @@ class _LaporanScreenState extends State<LaporanScreen> with SingleTickerProvider
                             ),
                             const SizedBox(height: 6),
                             InfoLine(label: 'Mahasiswa', value: '${loan.namaMahasiswa} (${loan.nimMahasiswa})'),
-                            InfoLine(label: 'Tanggal Pinjam', value: formatDate(loan.tanggalPinjam)),
+                            InfoLine(label: 'Waktu Pinjam', value: formatDateTime(loan.tanggalPinjam)),
                             InfoLine(label: 'Target Kembali', value: formatDate(loan.tanggalRencanaKembali)),
                             if (loan.status == 'selesai' && ret.idReturn != 0)
-                              InfoLine(label: 'Waktu Kembali', value: formatDateTime(ret.tanggalPengembalian)),
+                              InfoLine(label: 'Waktu Pengembalian', value: formatDateTime(ret.tanggalPengembalian)),
                             if (loan.keperluan != null && loan.keperluan!.isNotEmpty)
                               InfoLine(label: 'Keperluan', value: loan.keperluan!),
                           ],

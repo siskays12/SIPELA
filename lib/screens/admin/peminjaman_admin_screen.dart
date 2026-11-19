@@ -6,6 +6,23 @@ import '../../models/tool_model.dart';
 import '../../widgets/app_widgets.dart';
 import 'mahasiswa_screen.dart';
 
+// Helper class untuk proses pengembalian (dipindah dari pengembalian_screen)
+class _ReturnItem {
+  final int idTool;
+  final String namaAlat;
+  final String kodeAlat;
+  final int jumlah;
+  String kondisi;
+
+  _ReturnItem({
+    required this.idTool,
+    required this.namaAlat,
+    required this.kodeAlat,
+    required this.jumlah,
+    required this.kondisi,
+  });
+}
+
 class PeminjamanAdminScreen extends StatefulWidget {
   const PeminjamanAdminScreen({super.key});
 
@@ -843,7 +860,452 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
               ],
             ),
           ),
+
+          const SizedBox(height: 12),
+          // ── Action Buttons berdasarkan status ──────────────────────────
+          _buildLoanActions(loan),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoanActions(Loan loan) {
+    switch (loan.status) {
+      case 'menunggu':
+        return Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _prosesApproval(loan, 'tolak'),
+                icon: const Icon(Icons.close, size: 15, color: kColorDanger),
+                label: const Text('Tolak',
+                    style: TextStyle(color: kColorDanger, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: kColorDanger),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton.icon(
+                onPressed: () => _prosesApproval(loan, 'setujui'),
+                icon: const Icon(Icons.check, size: 15, color: Colors.white),
+                label: const Text('Setujui',
+                    style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kColorSuccess,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ],
+        );
+
+      case 'disetujui':
+        return SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _prosesHandover(loan),
+            icon: const Icon(Icons.outbox_rounded, size: 15, color: Colors.white),
+            label: const Text('Serahkan Alat',
+                style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kBrandPrimary,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        );
+
+      case 'dipinjam':
+        return SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _prosesKembali(loan),
+            icon: const Icon(Icons.assignment_return_outlined, size: 15, color: Colors.white),
+            label: const Text('Proses Pengembalian',
+                style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kColorSuccess,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        );
+
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Future<void> _prosesApproval(Loan loan, String action) async {
+    final label = action == 'setujui' ? 'menyetujui' : 'menolak';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Konfirmasi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        content: Text('Yakin ingin $label peminjaman #${loan.idLoan}?',
+            style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal', style: TextStyle(color: kTextMuted))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: action == 'setujui' ? kColorSuccess : kColorDanger,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            child: Text(action == 'setujui' ? 'Setujui' : 'Tolak',
+                style: const TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await ApiService.patch('/loans/${loan.idLoan}/approval', {'action': action});
+      if (mounted) {
+        showSuccess(context, action == 'setujui'
+            ? 'Peminjaman #${loan.idLoan} disetujui'
+            : 'Peminjaman #${loan.idLoan} ditolak');
+        _fetchData();
+      }
+    } catch (e) {
+      if (mounted) showError(context, e.toString());
+    }
+  }
+
+  Future<void> _prosesHandover(Loan loan) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Serahkan Alat', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        content: Text(
+            'Konfirmasi alat untuk peminjaman #${loan.idLoan} sudah diserahkan ke mahasiswa?',
+            style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal', style: TextStyle(color: kTextMuted))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kBrandPrimary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            child: const Text('Ya, Serahkan', style: TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await ApiService.patch('/loans/${loan.idLoan}/handover', {});
+      if (mounted) {
+        showSuccess(context, 'Alat berhasil diserahkan untuk peminjaman #${loan.idLoan}');
+        _fetchData();
+      }
+    } catch (e) {
+      if (mounted) showError(context, e.toString());
+    }
+  }
+
+  Future<void> _prosesKembali(Loan loan) async {
+    final items = loan.daftarAlat.map((item) {
+      final tool = item.idTool != null ? _toolsMap[item.idTool] : null;
+      final displayName = (item.namaAlat?.isNotEmpty == true)
+          ? item.namaAlat!
+          : (tool?.namaAlat ?? (item.idTool != null ? 'Alat #${item.idTool}' : 'Alat tidak diketahui'));
+      return _ReturnItem(
+        idTool: item.idTool ?? 0,
+        namaAlat: displayName,
+        kodeAlat: tool?.kodeAlat ?? '-',
+        jumlah: item.jumlah,
+        kondisi: 'baik',
+      );
+    }).toList();
+
+    final catatanCtrl = TextEditingController();
+    bool saving = false;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: kSurface,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560, maxHeight: 720),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Proses Pengembalian Alat',
+                              style: TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.w700, color: kTextMain)),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Peminjaman #${loan.idLoan} • ${loan.namaMahasiswa.isNotEmpty ? "${loan.namaMahasiswa} (${loan.nimMahasiswa})" : "Mahasiswa #${loan.idCustomer}"}',
+                            style: const TextStyle(fontSize: 12.5, color: kTextMuted),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20, color: kTextMuted),
+                        onPressed: () => Navigator.pop(ctx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: kBorder),
+                  const SizedBox(height: 14),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Cek Kondisi Fisik Alat:',
+                                  style: TextStyle(
+                                      fontSize: 13, fontWeight: FontWeight.w600, color: kTextMain)),
+                              Text('${items.length} jenis alat',
+                                  style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...items.map((item) => Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: kBorder),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item.namaAlat,
+                                                  style: const TextStyle(
+                                                      fontSize: 13.5,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: kTextMain)),
+                                              const SizedBox(height: 2),
+                                              Text(item.kodeAlat,
+                                                  style: const TextStyle(
+                                                      fontSize: 11.5, color: kTextMuted)),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                              color: const Color(0xFFE2E8F0),
+                                              borderRadius: BorderRadius.circular(6)),
+                                          child: Text('${item.jumlah} unit',
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: kTextMain)),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Text('Kondisi Saat Dikembalikan:',
+                                        style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w500,
+                                            color: kTextMuted)),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _conditionChip(
+                                            label: 'Baik',
+                                            icon: Icons.check_circle_outline,
+                                            isSelected: item.kondisi == 'baik',
+                                            activeColor: kColorSuccess,
+                                            onTap: () => setS(() => item.kondisi = 'baik'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: _conditionChip(
+                                            label: 'Rusak',
+                                            icon: Icons.error_outline,
+                                            isSelected: item.kondisi == 'rusak',
+                                            activeColor: kColorDanger,
+                                            onTap: () => setS(() => item.kondisi = 'rusak'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: _conditionChip(
+                                            label: 'Hilang',
+                                            icon: Icons.help_outline,
+                                            isSelected: item.kondisi == 'hilang',
+                                            activeColor: const Color(0xFF7C3AED),
+                                            onTap: () => setS(() => item.kondisi = 'hilang'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              )),
+                          const SizedBox(height: 10),
+                          const Text('Catatan Petugas Lab (Opsional):',
+                              style: TextStyle(
+                                  fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextMain)),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: catatanCtrl,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Contoh: Alat dikembalikan dalam keadaan bersih dan lengkap kabelnya',
+                              hintStyle:
+                                  const TextStyle(fontSize: 12, color: kTextSubtle),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: kBorder)),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: kBorder)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: kBorder),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Batal',
+                            style: TextStyle(color: kTextMuted, fontSize: 13)),
+                      ),
+                      const SizedBox(width: 8),
+                      AppButton(
+                        label: 'Selesaikan Pengembalian',
+                        color: kColorSuccess,
+                        icon: Icons.check,
+                        isLoading: saving,
+                        onPressed: () async {
+                          setS(() => saving = true);
+                          try {
+                            final detail = items
+                                .map((item) => {
+                                      'id_tool': item.idTool,
+                                      'nama_alat': item.namaAlat,
+                                      'jumlah': item.jumlah,
+                                      'kondisi': item.kondisi,
+                                    })
+                                .toList();
+                            await ApiService.post('/returns/${loan.idLoan}', {
+                              'detail_pengembalian': detail,
+                              'catatan': catatanCtrl.text.trim().isEmpty
+                                  ? null
+                                  : catatanCtrl.text.trim(),
+                            });
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            if (mounted) {
+                              showSuccess(context,
+                                  'Pengembalian peminjaman #${loan.idLoan} berhasil dicatat');
+                              _fetchData();
+                            }
+                          } catch (e) {
+                            if (mounted) showError(context, e.toString());
+                          } finally {
+                            setS(() => saving = false);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _conditionChip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withValues(alpha: 0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? activeColor : kBorder,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: isSelected ? activeColor : kTextMuted),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? activeColor : kTextMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

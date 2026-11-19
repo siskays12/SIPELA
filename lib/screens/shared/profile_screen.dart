@@ -317,11 +317,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _loading
           ? const LoadingWidget(message: 'Memuat informasi profil...')
-          : Center(
+          : Align(
+              alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
+                constraints: const BoxConstraints(maxWidth: 600),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -434,11 +435,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                             if (!_isEditing) ...[
                               // VIEW MODE: Tampilan rapi, minimalis, dan elegan
-                              _infoRow(icon: Icons.person_outline, label: 'Nama Lengkap', value: _fullName),
-                              const Divider(height: 16, color: kBorder),
-                              _infoRow(icon: Icons.alternate_email, label: 'Username', value: '@$_username'),
-                              const Divider(height: 16, color: kBorder),
-                              _infoRow(icon: Icons.shield_outlined, label: 'Role / Peran', value: 'Petugas / Admin Laboratorium'),
+                              _infoTile(icon: Icons.person_outline, label: 'Nama Lengkap', value: _fullName),
+                              const Divider(height: 18, color: kBorder),
+                              _infoTile(icon: Icons.alternate_email, label: 'Username Akun', value: '@$_username'),
+                              const Divider(height: 18, color: kBorder),
+                              _infoTile(icon: Icons.shield_outlined, label: 'Role & Hak Akses', value: 'Petugas / Admin Laboratorium'),
                             ] else ...[
                               // EDIT MODE: Form interaktif untuk mengubah data profil
                               Form(
@@ -629,27 +630,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _infoRow({required IconData icon, required String label, required String value}) {
+  Widget _infoTile({required IconData icon, required String label, required String value}) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 16, color: kBrandAccent),
+          child: Icon(icon, size: 17, color: kBrandAccent),
         ),
         const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12.5, color: kTextMuted, fontWeight: FontWeight.w500),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kTextMain),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11.5, color: kTextMuted, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 1.5),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
+              ),
+            ],
+          ),
         ),
       ],
     );
