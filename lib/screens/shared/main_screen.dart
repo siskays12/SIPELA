@@ -183,11 +183,15 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             Text(
               _navItems[_selectedIndex].label,
-              style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: kTextMain, letterSpacing: -0.3),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: kTextMain, letterSpacing: -0.3),
             ),
             const Text(
-              'SIPELA • UPT Laboratorium Kampus',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: kTextMuted),
+              'SIPELA • UPT Laboratorium',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: kTextMuted),
             ),
           ],
         ),

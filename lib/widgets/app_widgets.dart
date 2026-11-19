@@ -173,16 +173,16 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = color ?? kBrandAccent;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: kSurface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x080F172A),
-            blurRadius: 10,
-            offset: Offset(0, 3),
+            color: Color(0x060F172A),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -199,39 +199,43 @@ class StatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: kTextMuted,
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, size: 16, color: accent),
+                child: Icon(icon, size: 15, color: accent),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-              color: kTextMain,
-              letterSpacing: -0.6,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: kTextMain,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
+          if (subtitle != null)
             Text(
               subtitle!,
-              style: TextStyle(fontSize: 10.5, color: accent, fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, color: accent, fontWeight: FontWeight.w600),
             ),
-          ],
         ],
       ),
     );

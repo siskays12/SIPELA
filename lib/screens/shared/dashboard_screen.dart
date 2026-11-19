@@ -117,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Icon(Icons.school, size: 13, color: Colors.white),
                                 SizedBox(width: 5),
                                 Text(
-                                  'UPT LABORATORIUM & BENGKEL KAMPUS',
+                                  'UPT LABORATORIUM',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 10.5,
@@ -149,11 +149,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Text(
                         'Selamat Bertugas, $_username 👋',
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                           letterSpacing: -0.3,
@@ -161,11 +161,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Layanan peminjaman alat laboratorium, bengkel & sarpras kampus untuk 8 program studi vokasi siap beroperasi.',
+                        'Sistem Informasi Peminjaman Alat Laboratorium & Sarpras Kampus.',
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.88),
-                          height: 1.35,
+                          height: 1.3,
                         ),
                       ),
                     ],
@@ -173,51 +173,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // Peringatan Terlambat (Jika Ada)
             if (terlambat.isNotEmpty) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: kBgDanger,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: kColorDanger.withValues(alpha: 0.3)),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-                  ],
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: kColorDanger.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.warning_amber_rounded, size: 20, color: kColorDanger),
-                    ),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.warning_amber_rounded, size: 20, color: kColorDanger),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Perhatian: ${terlambat.length} Peminjaman Melewati Batas Waktu!',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kColorDanger),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Segera hubungi mahasiswa yang bersangkutan melalui WhatsApp untuk konfirmasi pengembalian.',
-                            style: TextStyle(fontSize: 11.5, color: kColorDanger.withValues(alpha: 0.85)),
-                          ),
-                        ],
+                      child: Text(
+                        'Perhatian: ${terlambat.length} peminjaman melewati batas waktu pengembalian!',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kColorDanger),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
             ],
 
             // ── 4 Ringkasan Statistik Utama ───────────────────────
@@ -225,12 +205,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.85,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.55,
               children: [
                 StatCard(
-                  label: 'Total Stok Alat Lab',
+                  label: 'Total Stok Alat',
                   value: '$totalAlat',
                   icon: Icons.inventory_2_outlined,
                   color: kBrandPrimary,
@@ -241,7 +221,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: '$alatTersedia',
                   icon: Icons.check_circle_outline,
                   color: kColorSuccess,
-                  subtitle: 'Siap dipinjam praktikum',
+                  subtitle: 'Siap dipinjam',
                 ),
                 StatCard(
                   label: 'Sedang Dipinjam',
@@ -255,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: '$totalTransaksi',
                   icon: Icons.receipt_long_outlined,
                   color: kBrandAccent,
-                  subtitle: 'Tercatat dalam sistem',
+                  subtitle: 'Tercatat di sistem',
                 ),
               ],
             ),
@@ -263,28 +243,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Peminjaman Aktif Terkini
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Row(
-                  children: [
-                    Icon(Icons.assignment_outlined, size: 18, color: kBrandAccent),
-                    SizedBox(width: 8),
-                    Text(
-                      'Peminjaman Yang Sedang Berjalan',
-                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: kTextMain),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                const Icon(Icons.assignment_outlined, size: 17, color: kBrandAccent),
+                const SizedBox(width: 7),
+                Expanded(
                   child: Text(
-                    '${pinjamanAktif.length} transaksi aktif',
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: kBrandAccent),
+                    'Peminjaman Yang Sedang Berjalan',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
                   ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${pinjamanAktif.length} transaksi',
+                  style: const TextStyle(fontSize: 11, color: kBrandAccent, fontWeight: FontWeight.w600),
                 ),
               ],
             ),

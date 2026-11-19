@@ -114,14 +114,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Sistem Peminjaman Laboratorium, Bengkel & Sarpras Kampus',
+                    'Sistem Peminjaman Alat Laboratorium',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12.5, color: kTextMuted),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   CleanCard(
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.all(20),
                     child: Form(
                       key: _loginFormKey,
                       child: Column(
@@ -174,11 +174,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   const Text(
-                    'Aplikasi ini dioperasikan oleh Petugas / Admin Laboratorium untuk mendata alat dan melayani peminjaman mahasiswa di tempat.',
+                    'Portal Khusus Petugas / Admin Laboratorium',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 11.5, color: kTextSubtle, height: 1.4),
+                    style: TextStyle(fontSize: 11.5, color: kTextSubtle),
                   ),
                 ],
               ),
