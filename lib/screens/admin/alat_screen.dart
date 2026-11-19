@@ -18,18 +18,17 @@ class _AlatScreenState extends State<AlatScreen> {
   String _search = '';
   String _kategoriFilter = 'Semua';
 
-  final List<String> _kategoriList = [
-    'Semua',
-    'Teknologi Rekayasa Perangkat Lunak',
-    'Teknologi Rekayasa Pemeliharaan Alat Berat',
-    'Teknologi Rekayasa Logistik',
-    'Akuntansi Perpajakan',
-    'Bisnis Digital',
-    'Teknik Listrik',
-    'Teknik Elektronika',
-    'Teknik Mesin',
-    'Sarana Prasarana',
+  static const List<String> _defaultKategori = [
+    'Elektronik',
+    'Komputer dan Jaringan',
+    'Peralatan Praktikum',
+    'Audio Visual',
+    'Peralatan Presentasi',
+    'Peralatan Olahraga',
+    'Perlengkapan Kegiatan',
   ];
+
+  List<String> _kategoriList = List.from(_defaultKategori);
 
   @override
   void initState() {
@@ -43,6 +42,16 @@ class _AlatScreenState extends State<AlatScreen> {
       final data = await ApiService.get('/tools');
       final list = (data as List).map((e) => Tool.fromJson(e)).toList();
       _tools = list;
+
+      // Sinkronkan daftar kategori dengan database
+      final dynamicKategori = <String>{..._defaultKategori};
+      for (final t in list) {
+        if (t.kategori.trim().isNotEmpty && t.kategori != 'Umum') {
+          dynamicKategori.add(t.kategori.trim());
+        }
+      }
+      _kategoriList = dynamicKategori.toList();
+
       final q = _search.toLowerCase();
       final filteredList = _tools.where((t) {
         final matchesQuery = t.namaAlat.toLowerCase().contains(q) ||
@@ -78,9 +87,16 @@ class _AlatScreenState extends State<AlatScreen> {
     final formKey = GlobalKey<FormState>();
     final kode = TextEditingController(text: existing?.kodeAlat ?? '');
     final nama = TextEditingController(text: existing?.namaAlat ?? '');
-    String kategori = _kategoriList.contains(existing?.kategori) && existing?.kategori != 'Semua'
-        ? existing!.kategori
-        : 'Teknologi Rekayasa Perangkat Lunak';
+    
+    final bool hasExistingKategori = existing != null && existing.kategori.trim().isNotEmpty;
+    bool isCustomKategori = hasExistingKategori && !_kategoriList.contains(existing.kategori.trim());
+    String selectedKategori = hasExistingKategori && _kategoriList.contains(existing.kategori.trim())
+        ? existing.kategori.trim()
+        : _kategoriList.first;
+    final customKategori = TextEditingController(
+      text: isCustomKategori ? existing?.kategori.trim() : '',
+    );
+
     final deskripsi = TextEditingController(text: existing?.deskripsi ?? '');
     final stokTotal = TextEditingController(text: existing?.stokTotal.toString() ?? '1');
     final stokTersedia = TextEditingController(text: existing?.stokTersedia.toString() ?? '1');
@@ -174,13 +190,62 @@ class _AlatScreenState extends State<AlatScreen> {
                             ),
                             const SizedBox(height: 12),
 
-                            _inputLabel('Kategori Alat *'),
-                            DropdownButtonFormField<String>(
-                              initialValue: kategori,
-                              decoration: _dialogInput(''),
-                              items: _kategoriList.where((k) => k != 'Semua').map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
-                              onChanged: (v) => setS(() => kategori = v ?? 'Teknologi Rekayasa Perangkat Lunak'),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _inputLabel('Kategori Alat *'),
+                                InkWell(
+                                  onTap: () {
+                                    setS(() {
+                                      isCustomKategori = !isCustomKategori;
+                                      if (isCustomKategori && customKategori.text.isEmpty) {
+                                        customKategori.text = selectedKategori;
+                                      }
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          isCustomKategori ? Icons.format_list_bulleted : Icons.add_circle_outline,
+                                          size: 14,
+                                          color: kBrandAccent,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          isCustomKategori ? 'Pilih dari Daftar' : '+ Ketik Kategori Baru',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: kBrandAccent,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 4),
+                            if (isCustomKategori)
+                              TextFormField(
+                                controller: customKategori,
+                                decoration: _dialogInput('Ketik nama kategori baru...'),
+                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Nama kategori wajib diisi' : null,
+                              )
+                            else
+                              DropdownButtonFormField<String>(
+                                value: _kategoriList.contains(selectedKategori) ? selectedKategori : _kategoriList.first,
+                                decoration: _dialogInput('Pilih Kategori Alat'),
+                                isExpanded: true,
+                                items: _kategoriList.map((k) => DropdownMenuItem(
+                                  value: k,
+                                  child: Text(k, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
+                                )).toList(),
+                                onChanged: (v) => setS(() => selectedKategori = v ?? _kategoriList.first),
+                              ),
                             const SizedBox(height: 12),
 
                             _inputLabel('Deskripsi Singkat (Opsional)'),
@@ -301,10 +366,14 @@ class _AlatScreenState extends State<AlatScreen> {
                           if (!formKey.currentState!.validate()) return;
                           setS(() => saving = true);
                           try {
+                            final finalKategori = isCustomKategori
+                                ? customKategori.text.trim()
+                                : selectedKategori;
+
                             final payload = {
                               'kode_alat': kode.text.trim(),
                               'nama_alat': nama.text.trim(),
-                              'kategori': kategori,
+                              'kategori': finalKategori,
                               'deskripsi': deskripsi.text.trim().isEmpty ? null : deskripsi.text.trim(),
                               'stok_total': int.tryParse(stokTotal.text) ?? 0,
                               'stok_tersedia': int.tryParse(stokTersedia.text) ?? 0,
@@ -445,7 +514,7 @@ class _AlatScreenState extends State<AlatScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: _kategoriList.map((k) {
+                    children: ['Semua', ..._kategoriList].map((k) {
                       final active = _kategoriFilter == k;
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),

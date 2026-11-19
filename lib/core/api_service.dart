@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const bool useMockData = false;
-const String baseUrl = 'http://10.10.12.206:8000';
+const String baseUrl = 'http://10.91.202.88:8000';
 
 class ApiService {
   // ─── Auth Storage ─────────────────────────────
@@ -67,6 +67,10 @@ class ApiService {
 
     final res = await http.post(
       Uri.parse('$baseUrl/login'),
+      headers: {
+        'Accept': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: {'username': username, 'password': password},
     );
     return _handleResponse(res);
@@ -282,14 +286,24 @@ class ApiService {
     final token = await getToken();
     return {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
 
   static Future<dynamic> _handleResponse(http.Response res) async {
-    final body = jsonDecode(utf8.decode(res.bodyBytes));
+    dynamic body;
+    try {
+      body = jsonDecode(utf8.decode(res.bodyBytes));
+    } catch (_) {
+      throw ApiException(
+        'Server mengembalikan HTML/Error (Status ${res.statusCode}). Pastikan port :8000 dan URL benar.',
+        res.statusCode,
+      );
+    }
     if (res.statusCode >= 200 && res.statusCode < 300) return body;
-    final msg = body['detail'] ?? 'Terjadi kesalahan';
+    final msg = body is Map ? (body['detail'] ?? 'Terjadi kesalahan') : 'Terjadi kesalahan';
     throw ApiException(msg.toString(), res.statusCode);
   }
 }
