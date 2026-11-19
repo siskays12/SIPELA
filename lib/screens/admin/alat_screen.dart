@@ -108,7 +108,7 @@ class _AlatScreenState extends State<AlatScreen> {
         ? existing.kategori.trim()
         : _kategoriList.first;
     final customKategori = TextEditingController(
-      text: isCustomKategori ? existing?.kategori.trim() : '',
+      text: isCustomKategori ? existing.kategori.trim() : '',
     );
 
     final deskripsi = TextEditingController(text: existing?.deskripsi ?? '');

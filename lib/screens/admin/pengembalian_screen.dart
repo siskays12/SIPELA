@@ -19,6 +19,7 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
   Map<int, Tool> _toolsMap = {};
   bool _loading = true;
   String _searchQuery = '';
+  String _filterKondisi = 'semua'; // 'semua', 'baik', 'perawatan', 'rusak', 'hilang'
 
   @override
   void initState() {
@@ -61,23 +62,33 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
   @override
   Widget build(BuildContext context) {
     final q = _searchQuery.toLowerCase();
+    // Filter berdasarkan kondisi alat yang dikembalikan
     final filtered = _returns.where((r) {
-      final loan = _loansMap[r.idLoan];
-      if ('${r.idReturn}'.contains(q) || '${r.idLoan}'.contains(q)) return true;
-      if (loan != null) {
-        if (loan.namaMahasiswa.toLowerCase().contains(q) ||
-            loan.nimMahasiswa.toLowerCase().contains(q) ||
-            loan.prodiMahasiswa.toLowerCase().contains(q)) {
-          return true;
+      // Filter kondisi
+      if (_filterKondisi != 'semua') {
+        final hasKondisi = r.detailPengembalian.any((d) => d.kondisi == _filterKondisi);
+        if (!hasKondisi) return false;
+      }
+      // Filter search
+      if (q.isNotEmpty) {
+        final loan = _loansMap[r.idLoan];
+        if ('${r.idReturn}'.contains(q) || '${r.idLoan}'.contains(q)) return true;
+        if (loan != null) {
+          if (loan.namaMahasiswa.toLowerCase().contains(q) ||
+              loan.nimMahasiswa.toLowerCase().contains(q) ||
+              loan.prodiMahasiswa.toLowerCase().contains(q)) {
+            return true;
+          }
         }
+        if (r.catatan?.toLowerCase().contains(q) == true) return true;
+        for (final d in r.detailPengembalian) {
+          if (d.namaAlat?.toLowerCase().contains(q) == true) return true;
+          final tool = d.idTool > 0 ? _toolsMap[d.idTool] : null;
+          if (tool?.namaAlat.toLowerCase().contains(q) == true) return true;
+        }
+        return false;
       }
-      if (r.catatan?.toLowerCase().contains(q) == true) return true;
-      for (final d in r.detailPengembalian) {
-        if (d.namaAlat?.toLowerCase().contains(q) == true) return true;
-        final tool = d.idTool > 0 ? _toolsMap[d.idTool] : null;
-        if (tool?.namaAlat.toLowerCase().contains(q) == true) return true;
-      }
-      return false;
+      return true;
     }).toList();
 
     return Scaffold(
@@ -110,12 +121,29 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
                     isDense: true,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
+                // Filter chip kondisi
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _filterChip('Semua', 'semua', null),
+                      const SizedBox(width: 6),
+                      _filterChip('Baik', 'baik', kColorSuccess),
+                      const SizedBox(width: 6),
+                      _filterChip('Perawatan', 'perawatan', kColorWarning),
+                      const SizedBox(width: 6),
+                      _filterChip('Rusak', 'rusak', kColorDanger),
+                      const SizedBox(width: 6),
+                      _filterChip('Hilang', 'hilang', const Color(0xFF7C3AED)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total: ${_returns.length} riwayat selesai',
+                      '${filtered.length} dari ${_returns.length} riwayat',
                       style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMuted),
                     ),
                   ],
@@ -294,6 +322,32 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
                       ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, String value, Color? color) {
+    final isSelected = _filterKondisi == value;
+    final activeColor = color ?? kBrandAccent;
+    return InkWell(
+      onTap: () => setState(() => _filterKondisi = value),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withValues(alpha: 0.12) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? activeColor : kBorder),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? activeColor : kTextMuted,
+          ),
+        ),
       ),
     );
   }
