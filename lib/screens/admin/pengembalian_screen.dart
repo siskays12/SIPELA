@@ -87,15 +87,15 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
           // Search & Summary Header
           Container(
             color: kSurface,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
             child: Column(
               children: [
                 TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
-                    hintText: 'Cari riwayat (Nama Mahasiswa, NIM, No. Pinjam, Alat)...',
+                    hintText: 'Cari riwayat (Nama, NIM, No. Pinjam, Alat)...',
                     hintStyle: const TextStyle(fontSize: 12.5, color: kTextSubtle),
-                    prefixIcon: const Icon(Icons.search, size: 18, color: kTextMuted),
+                    prefixIcon: const Icon(Icons.search, size: 17, color: kTextMuted),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
@@ -106,25 +106,17 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
                       borderRadius: BorderRadius.circular(8),
                       borderSide: const BorderSide(color: kBorder),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                     isDense: true,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: kBorder),
-                      ),
-                      child: Text(
-                        'Total Riwayat Selesai: ${_returns.length}',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMain),
-                      ),
+                    Text(
+                      'Total: ${_returns.length} riwayat selesai',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMuted),
                     ),
                   ],
                 ),
@@ -140,15 +132,15 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
                     ? const EmptyState(
                         icon: Icons.history,
                         title: 'Belum ada riwayat pengembalian',
-                        subtitle: 'Alat yang telah diproses kembali akan tercatat lengkap di sini',
+                        subtitle: 'Alat yang telah diproses kembali akan tercatat di sini',
                       )
                     : RefreshIndicator(
                         onRefresh: _fetchData,
                         color: kBrandAccent,
                         child: ListView.separated(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           itemCount: filtered.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 10),
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
                           itemBuilder: (_, i) {
                             final r = filtered[i];
                             final loan = _loansMap[r.idLoan];
@@ -156,252 +148,144 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
                                 ? loan!.namaMahasiswa
                                 : 'Mahasiswa #${loan?.idCustomer ?? "-"}';
                             final nimMahasiswa = loan?.nimMahasiswa ?? '-';
-                            final prodiMahasiswa = loan?.prodiMahasiswa ?? '-';
 
                             return CleanCard(
-                              padding: const EdgeInsets.all(15),
+                              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header: ID Riwayat & ID Pinjaman + Status Selesai
+                                  // Header: Nomor Riwayat & Pinjaman
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(6),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFDCFCE7),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: const Icon(
-                                              Icons.assignment_turned_in_outlined,
-                                              size: 16,
-                                              color: kColorSuccess,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
+                                          const Icon(Icons.check_circle_outline, size: 15, color: kColorSuccess),
+                                          const SizedBox(width: 5),
                                           Text(
                                             'Riwayat #${r.idReturn}',
                                             style: const TextStyle(
-                                                fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain),
+                                                fontSize: 13, fontWeight: FontWeight.w700, color: kTextMain),
                                           ),
                                           const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFEFF6FF),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              'Pinjam #${r.idLoan}',
-                                              style: const TextStyle(
-                                                  fontSize: 11, fontWeight: FontWeight.w600, color: kBrandPrimary),
-                                            ),
+                                          Text(
+                                            '(Pinjam #${r.idLoan})',
+                                            style: const TextStyle(fontSize: 11.5, color: kTextMuted),
                                           ),
                                         ],
                                       ),
                                       const StatusBadge('selesai'),
                                     ],
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 6),
 
-                                  // Identitas Mahasiswa Peminjam
+                                  // Identitas Peminjam
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.person_outline, size: 14, color: kTextMuted),
+                                      const SizedBox(width: 5),
+                                      Expanded(
+                                        child: Text(
+                                          '$namaMahasiswa ($nimMahasiswa)',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  // Baris Waktu: Pinjam ➔ Kembali (Kompak & Rapi)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF8FAFC),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: const Color(0xFFF1F5F9)),
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
-                                          radius: 16,
-                                          backgroundColor: kBrandPrimary,
-                                          child: Text(
-                                            getInitial(namaMahasiswa),
-                                            style: const TextStyle(
-                                                fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                                        // Waktu Pinjam
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.outbox_rounded, size: 12, color: kTextMuted),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  loan != null ? formatDateTime(loan.tanggalPinjam) : '-',
+                                                  style: const TextStyle(fontSize: 11, color: kTextMain),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        const SizedBox(width: 10),
+                                        const Text(' ➔ ', style: TextStyle(fontSize: 11, color: kTextMuted)),
+                                        // Waktu Kembali
                                         Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                          child: Row(
                                             children: [
-                                              Text(
-                                                namaMahasiswa,
-                                                style: const TextStyle(
-                                                    fontSize: 13, fontWeight: FontWeight.w700, color: kTextMain),
+                                              const Icon(Icons.assignment_turned_in, size: 12, color: kColorSuccess),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  formatDateTime(r.tanggalPengembalian),
+                                                  style: const TextStyle(
+                                                      fontSize: 11, fontWeight: FontWeight.w600, color: kColorSuccess),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                              Text(
-                                                '$nimMahasiswa • $prodiMahasiswa',
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Daftar Alat yang dikembalikan
+                                  const SizedBox(height: 6),
+                                  Column(
+                                    children: r.detailPengembalian.map((d) {
+                                      final tool = d.idTool > 0 ? _toolsMap[d.idTool] : null;
+                                      final namaAlat = (d.namaAlat?.isNotEmpty == true)
+                                          ? d.namaAlat!
+                                          : (tool?.namaAlat ?? (d.idTool > 0 ? 'Alat #${d.idTool}' : 'Alat'));
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 1.5),
+                                        child: Row(
+                                          children: [
+                                            const Text('• ', style: TextStyle(fontSize: 11, color: kBrandAccent)),
+                                            Expanded(
+                                              child: Text(
+                                                namaAlat,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontSize: 11.5, color: kTextMuted),
+                                                style: const TextStyle(fontSize: 11.5, color: kTextMain),
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            Text('${d.jumlah} unit',
+                                                style: const TextStyle(fontSize: 11, color: kTextMuted)),
+                                            const SizedBox(width: 6),
+                                            KondisiBadge(d.kondisi),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      );
+                                    }).toList(),
                                   ),
-                                  const SizedBox(height: 10),
-
-                                  // Detail Waktu: Kapan Dipinjam & Kapan Dikembalikan
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFF1F5F9)),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        // Waktu Peminjaman
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.outbox_rounded, size: 16, color: kBrandAccent),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    const Text('Waktu Dipinjam',
-                                                        style: TextStyle(
-                                                            fontSize: 10.5,
-                                                            color: kTextSubtle,
-                                                            fontWeight: FontWeight.w500)),
-                                                    const SizedBox(height: 2),
-                                                    Text(
-                                                      loan != null
-                                                          ? formatDateTime(loan.tanggalPinjam)
-                                                          : '-',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.w700,
-                                                          color: kTextMain),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(height: 32, width: 1, color: kBorder),
-                                        const SizedBox(width: 12),
-                                        // Waktu Pengembalian
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.assignment_turned_in, size: 16, color: kColorSuccess),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    const Text('Waktu Dikembalikan',
-                                                        style: TextStyle(
-                                                            fontSize: 10.5,
-                                                            color: kTextSubtle,
-                                                            fontWeight: FontWeight.w500)),
-                                                    const SizedBox(height: 2),
-                                                    Text(
-                                                      formatDateTime(r.tanggalPengembalian),
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.w700,
-                                                          color: kColorSuccess),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  if (loan?.keperluan != null && loan!.keperluan!.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      child: Text(
-                                        'Keperluan: ${loan.keperluan!}',
-                                        style: const TextStyle(
-                                            fontSize: 11.5, color: kTextMuted, fontStyle: FontStyle.italic),
-                                      ),
-                                    ),
-                                  ],
 
                                   if (r.catatan != null && r.catatan!.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      child: Text(
-                                        'Catatan Petugas: ${r.catatan!}',
-                                        style: const TextStyle(
-                                            fontSize: 11.5, color: kTextMuted, fontStyle: FontStyle.italic),
-                                      ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Catatan: ${r.catatan!}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontSize: 10.5, color: kTextMuted, fontStyle: FontStyle.italic),
                                     ),
                                   ],
-
-                                  const SizedBox(height: 10),
-                                  const Text(
-                                    'Daftar Alat yang Dikembalikan:',
-                                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMuted),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: kBorder),
-                                    ),
-                                    child: Column(
-                                      children: r.detailPengembalian.map((d) {
-                                        final tool = d.idTool > 0 ? _toolsMap[d.idTool] : null;
-                                        final namaAlat = (d.namaAlat?.isNotEmpty == true)
-                                            ? d.namaAlat!
-                                            : (tool?.namaAlat ?? (d.idTool > 0 ? 'Alat #${d.idTool}' : 'Alat'));
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 3),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.circle, size: 5, color: kBrandAccent),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  namaAlat,
-                                                  style: const TextStyle(
-                                                      fontSize: 12.5, fontWeight: FontWeight.w500, color: kTextMain),
-                                                ),
-                                              ),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFF1F5F9),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: Text(
-                                                  '${d.jumlah} unit',
-                                                  style: const TextStyle(
-                                                      fontSize: 11, fontWeight: FontWeight.w600, color: kTextMain),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              KondisiBadge(d.kondisi),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
                                 ],
                               ),
                             );
