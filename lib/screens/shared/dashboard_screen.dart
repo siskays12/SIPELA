@@ -27,7 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
-      _username = (await ApiService.getUsername()) ?? 'Petugas';
+      _username = (await ApiService.getUsername()) ?? 'admin';
       final toolsData = await ApiService.get('/tools');
       final loansData = await ApiService.get('/loans');
       setState(() {

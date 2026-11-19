@@ -38,17 +38,30 @@ class ApiService {
     return prefs.getString('full_name');
   }
 
-  static Future<dynamic> updateProfile({required String fullName, required String username}) async {
+  static Future<String?> getNip() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('nip');
+  }
+
+  static Future<dynamic> updateProfile({
+    required String fullName,
+    required String username,
+    String? nip,
+  }) async {
     // 1. Simpan ke database melalui endpoint PUT /me
     final res = await put('/me', {
       'nama': fullName,
       'username': username,
+      if (nip != null) 'nip': nip,
     });
 
     // 2. Perbarui local preferences & token baru jika username berubah
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('full_name', fullName);
     await prefs.setString('username', username);
+    if (nip != null) {
+      await prefs.setString('nip', nip);
+    }
     if (res is Map && res['access_token'] != null) {
       await prefs.setString('token', res['access_token'].toString());
     }

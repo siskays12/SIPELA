@@ -139,7 +139,7 @@ class _MainScreenState extends State<MainScreen> {
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11),
                             ),
                           ),
-                          tooltip: 'Profil Petugas',
+                          tooltip: 'Profil',
                           onPressed: () async {
                             await Navigator.push(
                               context,
@@ -235,9 +235,9 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                         ),
                         const SizedBox(width: 7),
-                        Text(
-                          _username == 'admin' ? 'Petugas Lab' : _username,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
+                        const Text(
+                          'Admin',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
                         ),
                         const SizedBox(width: 3),
                         const Icon(Icons.chevron_right, size: 14, color: kTextMuted),

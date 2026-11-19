@@ -13,7 +13,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String _username = 'admin';
-  String _fullName = 'Bambang Sudarmono, S.T., M.Kom.';
+  String _fullName = 'Administrator';
+  String _nip = '-';
   bool _loading = true;
   bool _isEditing = false;
   bool _savingProfile = false;
@@ -21,12 +22,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _usernameController;
+  late TextEditingController _nipController;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _usernameController = TextEditingController();
+    _nipController = TextEditingController();
     _loadProfileData();
   }
 
@@ -34,24 +37,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _usernameController.dispose();
+    _nipController.dispose();
     super.dispose();
   }
 
   Future<void> _loadProfileData() async {
     setState(() => _loading = true);
     try {
-      // Ambil data profil langsung dari database melalui API /me
+      // Ambil data profil riil langsung dari database melalui API /me
       final me = await ApiService.get('/me');
       if (me is Map<String, dynamic>) {
         final nama = me['nama'] as String? ?? 'Administrator';
         final username = me['username'] as String? ?? 'admin';
+        final nip = me['nip'] as String? ?? '-';
 
         if (mounted) {
           setState(() {
             _fullName = nama;
             _username = username;
-            _nameController.text = nama;
-            _usernameController.text = username;
+            _nip = (nip.isEmpty) ? '-' : nip;
+            _nameController.text = _fullName;
+            _usernameController.text = _username;
+            _nipController.text = _nip == '-' ? '' : _nip;
             _loading = false;
           });
           return;
@@ -62,12 +69,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Fallback ke penyimpanan lokal jika offline
       final username = await ApiService.getUsername();
       final fullName = await ApiService.getFullName();
+      final nip = await ApiService.getNip();
       if (mounted) {
         setState(() {
           _username = username ?? 'admin';
-          _fullName = fullName ?? _username;
+          _fullName = fullName ?? 'Administrator';
+          _nip = nip ?? '-';
           _nameController.text = _fullName;
           _usernameController.text = _username;
+          _nipController.text = _nip == '-' ? '' : _nip;
           _loading = false;
         });
       }
@@ -81,14 +91,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final newName = _nameController.text.trim();
       final newUsername = _usernameController.text.trim().toLowerCase();
+      final newNip = _nipController.text.trim();
 
-      // Kirim pembaruan ke backend (database)
-      await ApiService.updateProfile(fullName: newName, username: newUsername);
+      // Kirim pembaruan ke database
+      await ApiService.updateProfile(
+        fullName: newName,
+        username: newUsername,
+        nip: newNip.isEmpty ? '-' : newNip,
+      );
 
       if (mounted) {
         setState(() {
           _fullName = newName;
           _username = newUsername;
+          _nip = newNip.isEmpty ? '-' : newNip;
           _savingProfile = false;
           _isEditing = false;
         });
@@ -116,13 +132,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           backgroundColor: kSurface,
           insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
+            constraints: const BoxConstraints(maxWidth: 420),
             child: Padding(
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(20),
               child: Form(
                 key: formKey,
                 child: Column(
@@ -143,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, size: 20, color: kTextMuted),
+                          icon: const Icon(Icons.close, size: 18, color: kTextMuted),
                           onPressed: () => Navigator.pop(ctx),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -152,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     const Divider(height: 1, color: kBorder),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     // Password Lama
                     const Text('Kata Sandi Saat Ini *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
@@ -162,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       obscureText: obscureOld,
                       decoration: InputDecoration(
                         hintText: 'Masukkan kata sandi lama',
-                        hintStyle: const TextStyle(fontSize: 12.5, color: kTextSubtle),
+                        hintStyle: const TextStyle(fontSize: 12, color: kTextSubtle),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -171,10 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: () => setS(() => obscureOld = !obscureOld),
                         ),
                       ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Kata sandi saat ini wajib diisi';
-                        return null;
-                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Kata sandi saat ini wajib diisi' : null,
                     ),
                     const SizedBox(height: 12),
 
@@ -186,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       obscureText: obscureNew,
                       decoration: InputDecoration(
                         hintText: 'Minimal 6 karakter',
-                        hintStyle: const TextStyle(fontSize: 12.5, color: kTextSubtle),
+                        hintStyle: const TextStyle(fontSize: 12, color: kTextSubtle),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -211,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       obscureText: obscureConfirm,
                       decoration: InputDecoration(
                         hintText: 'Ketik ulang kata sandi baru',
-                        hintStyle: const TextStyle(fontSize: 12.5, color: kTextSubtle),
+                        hintStyle: const TextStyle(fontSize: 12, color: kTextSubtle),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -226,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -237,14 +250,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(width: 8),
                         AppButton(
-                          label: 'Simpan Sandi Baru',
+                          label: 'Simpan Sandi',
                           icon: Icons.check,
                           isLoading: saving,
                           onPressed: () async {
                             if (!formKey.currentState!.validate()) return;
                             setS(() => saving = true);
                             try {
-                              // Kirim ke backend (database)
                               await ApiService.changePassword(
                                 oldPassword: oldPassCtrl.text,
                                 newPassword: newPassCtrl.text,
@@ -282,14 +294,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: kSurface,
         title: const Row(
           children: [
-            Icon(Icons.logout, size: 22, color: kColorDanger),
+            Icon(Icons.logout, size: 20, color: kColorDanger),
             SizedBox(width: 8),
-            Text('Keluar Akun Petugas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            Text('Keluar Akun', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           ],
         ),
         content: const Text(
           'Apakah Anda yakin ingin keluar dari sistem SIPELA? Sesi aktif Anda akan diakhiri.',
-          style: TextStyle(fontSize: 13, color: kTextMuted, height: 1.4),
+          style: TextStyle(fontSize: 13, color: kTextMuted),
         ),
         actions: [
           TextButton(
@@ -302,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: kColorDanger,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
             ),
             child: const Text('Ya, Keluar Akun', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
           ),
@@ -327,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: kBackground,
       appBar: AppBar(
         title: const Text(
-          'Profil Petugas Laboratorium',
+          'Profil',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kTextMain),
         ),
         backgroundColor: kSurface,
@@ -348,49 +360,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: _loading
-          ? const LoadingWidget(message: 'Memuat informasi profil...')
+          ? const LoadingWidget(message: 'Memuat profil...')
           : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
+                constraints: const BoxConstraints(maxWidth: 560),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Kartu Profil Terpadu (Ringkas, Rapi & Tanpa Jarak Berlebih) ──
+                      // ── Kartu Utama Profil ──
                       CleanCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Header Identitas Singkat
+                            // Header: Avatar, Nama, @username, Badge Admin
                             Row(
                               children: [
-                                Stack(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: kBrandPrimary,
-                                      child: Text(
-                                        getInitial(_fullName),
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF22C55E),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white, width: 1.5),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                CircleAvatar(
+                                  radius: 26,
+                                  backgroundColor: kBrandPrimary,
+                                  child: Text(
+                                    getInitial(_fullName),
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -401,26 +396,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       Text(
                                         _fullName,
                                         style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: kTextMain),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 3),
                                       Row(
                                         children: [
                                           Text(
                                             '@$_username',
                                             style: const TextStyle(fontSize: 12, color: kTextMuted, fontWeight: FontWeight.w500),
                                           ),
-                                          const SizedBox(width: 6),
-                                          const Text('•', style: TextStyle(color: kTextSubtle, fontSize: 10)),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 8),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFEFF6FF),
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(6),
                                               border: Border.all(color: const Color(0xFFBFDBFE)),
                                             ),
                                             child: const Text(
-                                              'Petugas Lab',
+                                              'Admin',
                                               style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: kBrandAccent),
                                             ),
                                           ),
@@ -435,12 +430,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       setState(() {
                                         _nameController.text = _fullName;
                                         _usernameController.text = _username;
+                                        _nipController.text = _nip == '-' ? '' : _nip;
                                         _isEditing = true;
                                       });
                                     },
                                     borderRadius: BorderRadius.circular(6),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFEFF6FF),
                                         borderRadius: BorderRadius.circular(6),
@@ -452,8 +448,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           Icon(Icons.edit_outlined, size: 13, color: kBrandAccent),
                                           SizedBox(width: 4),
                                           Text(
-                                            'Edit Profil',
-                                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: kBrandAccent),
+                                            'Edit',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kBrandAccent),
                                           ),
                                         ],
                                       ),
@@ -461,101 +457,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 14),
                             const Divider(height: 1, color: kBorder),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 14),
 
                             if (!_isEditing) ...[
-                              // VIEW MODE: Tampilan rapi, minimalis, dan elegan
+                              // VIEW MODE
                               _infoTile(icon: Icons.person_outline, label: 'Nama Lengkap', value: _fullName),
-                              const Divider(height: 18, color: kBorder),
+                              const Divider(height: 16, color: kBorder),
+                              _infoTile(icon: Icons.badge_outlined, label: 'NIP (Nomor Induk Pegawai)', value: _nip),
+                              const Divider(height: 16, color: kBorder),
                               _infoTile(icon: Icons.alternate_email, label: 'Username Akun', value: '@$_username'),
-                              const Divider(height: 18, color: kBorder),
-                              _infoTile(icon: Icons.shield_outlined, label: 'Role & Hak Akses', value: 'Petugas / Admin Laboratorium'),
+                              const Divider(height: 16, color: kBorder),
+                              _infoTile(icon: Icons.shield_outlined, label: 'Role', value: 'Admin'),
                             ] else ...[
-                              // EDIT MODE: Form interaktif untuk mengubah data profil
+                              // EDIT MODE
                               Form(
                                 key: _formKey,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'Nama Lengkap *',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
-                                    ),
-                                    const SizedBox(height: 5),
+                                    const Text('Nama Lengkap *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
+                                    const SizedBox(height: 4),
                                     TextFormField(
                                       controller: _nameController,
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kTextMain),
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(Icons.person_outline, size: 18, color: kTextMuted),
-                                        hintText: 'Contoh: Bambang Sudarmono, S.T., M.Kom.',
-                                        hintStyle: const TextStyle(fontSize: 12, color: kTextSubtle),
-                                        filled: true,
-                                        fillColor: const Color(0xFFF8FAFC),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
-                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
-                                      ),
-                                      validator: (v) {
-                                        if (v == null || v.trim().isEmpty) return 'Nama lengkap wajib diisi';
-                                        return null;
-                                      },
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      decoration: _inputDecoration('Contoh: Bambang Sudarmono, S.T., M.Kom.', Icons.person_outline),
+                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Nama lengkap wajib diisi' : null,
                                     ),
                                     const SizedBox(height: 12),
 
-                                    const Text(
-                                      'Username *',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
+                                    const Text('NIP (Nomor Induk Pegawai)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
+                                    const SizedBox(height: 4),
+                                    TextFormField(
+                                      controller: _nipController,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      decoration: _inputDecoration('Contoh: 19850412 201012 1 002', Icons.badge_outlined),
                                     ),
-                                    const SizedBox(height: 5),
+                                    const SizedBox(height: 12),
+
+                                    const Text('Username *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
+                                    const SizedBox(height: 4),
                                     TextFormField(
                                       controller: _usernameController,
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kTextMain),
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(Icons.alternate_email, size: 18, color: kTextMuted),
-                                        hintText: 'Contoh: admin',
-                                        hintStyle: const TextStyle(fontSize: 12, color: kTextSubtle),
-                                        filled: true,
-                                        fillColor: const Color(0xFFF8FAFC),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
-                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
-                                      ),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      decoration: _inputDecoration('Contoh: admin', Icons.alternate_email),
                                       validator: (v) {
                                         if (v == null || v.trim().isEmpty) return 'Username wajib diisi';
-                                        if (v.trim().length < 3) return 'Username minimal 3 karakter';
-                                        if (v.trim().contains(' ')) return 'Username tidak boleh mengandung spasi';
+                                        if (v.trim().length < 3) return 'Minimal 3 karakter';
+                                        if (v.trim().contains(' ')) return 'Tidak boleh ada spasi';
                                         return null;
                                       },
                                     ),
-                                    const SizedBox(height: 12),
-
-                                    const Text(
-                                      'Role Akun (Bawaan Sistem)',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                                      ),
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.shield_outlined, size: 16, color: kBrandAccent),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Petugas / Admin Laboratorium (Tetap)',
-                                            style: TextStyle(fontSize: 12.5, color: kTextMuted, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 18),
+                                    const SizedBox(height: 16),
 
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
@@ -567,6 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   setState(() {
                                                     _nameController.text = _fullName;
                                                     _usernameController.text = _username;
+                                                    _nipController.text = _nip == '-' ? '' : _nip;
                                                     _isEditing = false;
                                                   });
                                                 },
@@ -574,7 +529,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         AppButton(
-                                          label: 'Simpan Perubahan',
+                                          label: 'Simpan',
                                           icon: Icons.check,
                                           isLoading: _savingProfile,
                                           onPressed: _saveProfileChanges,
@@ -588,14 +543,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
-                      // ── 3. Kartu Pengaturan & Keamanan ──────────────────
-                      const Text(
-                        'Keamanan & Akun',
-                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
-                      ),
-                      const SizedBox(height: 8),
+                      // ── Kartu Keamanan Akun ──
                       CleanCard(
                         padding: EdgeInsets.zero,
                         child: Column(
@@ -609,14 +559,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 child: const Icon(Icons.key_outlined, size: 18, color: kBrandAccent),
                               ),
-                              title: const Text(
-                                'Ubah Kata Sandi',
-                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kTextMain),
-                              ),
-                              subtitle: const Text(
-                                'Perbarui kata sandi akun secara berkala',
-                                style: TextStyle(fontSize: 11.5, color: kTextMuted),
-                              ),
+                              title: const Text('Ubah Kata Sandi', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kTextMain)),
+                              subtitle: const Text('Perbarui kata sandi akun', style: TextStyle(fontSize: 11.5, color: kTextMuted)),
                               trailing: const Icon(Icons.chevron_right, size: 18, color: kTextMuted),
                               onTap: _showChangePasswordDialog,
                             ),
@@ -630,30 +574,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 child: const Icon(Icons.logout, size: 18, color: kColorDanger),
                               ),
-                              title: const Text(
-                                'Keluar dari Akun',
-                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kColorDanger),
-                              ),
-                              subtitle: const Text(
-                                'Akhiri sesi aktif Anda di SIPELA',
-                                style: TextStyle(fontSize: 11.5, color: kTextMuted),
-                              ),
+                              title: const Text('Keluar dari Akun', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kColorDanger)),
+                              subtitle: const Text('Akhiri sesi aktif di sistem SIPELA', style: TextStyle(fontSize: 11.5, color: kTextMuted)),
                               trailing: const Icon(Icons.chevron_right, size: 18, color: kColorDanger),
                               onTap: _handleLogout,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-
-                      // Footer
-                      Center(
-                        child: Text(
-                          'SIPELA • Sistem Inventaris & Peminjaman Alat Lab v2.4',
-                          style: TextStyle(fontSize: 11.5, color: kTextSubtle.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -662,17 +590,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  InputDecoration _inputDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      prefixIcon: Icon(icon, size: 17, color: kTextMuted),
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 12, color: kTextSubtle),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      isDense: true,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
+    );
+  }
+
   Widget _infoTile({required IconData icon, required String label, required String value}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 17, color: kBrandAccent),
+          child: Icon(icon, size: 16, color: kBrandAccent),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -681,12 +623,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 11.5, color: kTextMuted, fontWeight: FontWeight.w500),
+                style: const TextStyle(fontSize: 11, color: kTextMuted, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 1.5),
+              const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: kTextMain),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kTextMain),
               ),
             ],
           ),
