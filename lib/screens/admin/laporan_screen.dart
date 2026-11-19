@@ -172,9 +172,13 @@ class _LaporanScreenState extends State<LaporanScreen> with SingleTickerProvider
                       children: [
                         const Icon(Icons.warning_amber_rounded, size: 18, color: kColorDanger),
                         const SizedBox(width: 8),
-                        Text(
-                          'Peringatan: ${terlambat.length} Peminjaman Melewati Tenggat!',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kColorDanger),
+                        Expanded(
+                          child: Text(
+                            'Peringatan: ${terlambat.length} Peminjaman Melewati Tenggat!',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kColorDanger),
+                          ),
                         ),
                       ],
                     ),

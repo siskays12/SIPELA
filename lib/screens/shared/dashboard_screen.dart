@@ -348,22 +348,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.event_outlined, size: 13, color: kTextMuted),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'Batas: ${formatDate(loan.tanggalRencanaKembali)}',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: loan.isTerlambat ? FontWeight.w700 : FontWeight.w500,
-                                      color: loan.isTerlambat ? kColorDanger : kTextMain,
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.event_outlined, size: 13, color: kTextMuted),
+                                    const SizedBox(width: 5),
+                                    Expanded(
+                                      child: Text(
+                                        'Batas: ${formatDate(loan.tanggalRencanaKembali)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: loan.isTerlambat ? FontWeight.w700 : FontWeight.w500,
+                                          color: loan.isTerlambat ? kColorDanger : kTextMain,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Text(
                                 '${loan.daftarAlat.length} item alat',
                                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kBrandAccent),

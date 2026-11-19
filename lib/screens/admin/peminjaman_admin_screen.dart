@@ -589,18 +589,21 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  _filterChip(label: 'Semua (${_loans.length})', value: 'semua'),
-                  const SizedBox(width: 8),
-                  _filterChip(label: 'Sedang Dipinjam (${aktifLoans.length})', value: 'dipinjam'),
-                  const SizedBox(width: 8),
-                  _filterChip(
-                    label: 'Terlambat (${_loans.where((l) => l.isTerlambat).length})',
-                    value: 'terlambat',
-                    color: kColorDanger,
-                  ),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _filterChip(label: 'Semua (${_loans.length})', value: 'semua'),
+                    const SizedBox(width: 8),
+                    _filterChip(label: 'Sedang Dipinjam (${aktifLoans.length})', value: 'dipinjam'),
+                    const SizedBox(width: 8),
+                    _filterChip(
+                      label: 'Terlambat (${_loans.where((l) => l.isTerlambat).length})',
+                      value: 'terlambat',
+                      color: kColorDanger,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
