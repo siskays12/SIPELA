@@ -26,7 +26,20 @@ class _AlatScreenState extends State<AlatScreen> {
     'Peralatan Presentasi',
     'Peralatan Olahraga',
     'Perlengkapan Kegiatan',
+    'Sarana Prasarana',
   ];
+
+  static const Set<String> _ignoredLegacyKategori = {
+    'Teknologi Rekayasa Perangkat Lunak',
+    'Teknologi Rekayasa Pemeliharaan Alat Berat',
+    'Teknologi Rekayasa Logistik',
+    'Akuntansi Perpajakan',
+    'Bisnis Digital',
+    'Teknik Listrik',
+    'Teknik Elektronika',
+    'Teknik Mesin',
+    'Umum',
+  };
 
   List<String> _kategoriList = List.from(_defaultKategori);
 
@@ -43,11 +56,12 @@ class _AlatScreenState extends State<AlatScreen> {
       final list = (data as List).map((e) => Tool.fromJson(e)).toList();
       _tools = list;
 
-      // Sinkronkan daftar kategori dengan database
+      // Sinkronkan daftar kategori dengan database (abaikan kategori lama prodi)
       final dynamicKategori = <String>{..._defaultKategori};
       for (final t in list) {
-        if (t.kategori.trim().isNotEmpty && t.kategori != 'Umum') {
-          dynamicKategori.add(t.kategori.trim());
+        final cat = t.kategori.trim();
+        if (cat.isNotEmpty && !_ignoredLegacyKategori.contains(cat)) {
+          dynamicKategori.add(cat);
         }
       }
       _kategoriList = dynamicKategori.toList();
