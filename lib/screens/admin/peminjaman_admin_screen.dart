@@ -34,11 +34,10 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Loan> _loans = [];
-  List<Tool> _tools = [];
   Map<int, Tool> _toolsMap = {};
   bool _loading = true;
   String _searchLoan = '';
-  String _filterStatus = 'semua'; // 'semua', 'dipinjam', 'terlambat'
+  String _filterStatus = 'dipinjam'; // 'dipinjam', 'terlambat'
 
   final List<String> _prodiList = const [
     'Teknologi Rekayasa Perangkat Lunak (D4)',
@@ -80,7 +79,6 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
       setState(() {
         _loans = (loansData as List).map((e) => Loan.fromJson(e)).toList()
           ..sort((a, b) => b.idLoan.compareTo(a.idLoan));
-        _tools = toolsList;
         _toolsMap = map;
         _loading = false;
       });
@@ -510,7 +508,7 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                     children: [
                       const Icon(Icons.assignment_outlined, size: 16),
                       const SizedBox(width: 8),
-                      Text('Peminjaman Alat (${aktifLoans.length})'),
+                      Text('Peminjaman Aktif (${aktifLoans.length})'),
                     ],
                   ),
                 ),
@@ -554,11 +552,11 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
 
   Widget _buildPeminjamanTab(List<Loan> aktifLoans) {
     final q = _searchLoan.toLowerCase();
-    List<Loan> list = _loans;
-    if (_filterStatus == 'dipinjam') {
-      list = aktifLoans;
-    } else if (_filterStatus == 'terlambat') {
-      list = _loans.where((l) => l.isTerlambat).toList();
+    // Tab peminjaman HANYA tampilkan yang masih aktif (dipinjam)
+    // Yang sudah selesai otomatis tidak muncul di sini → ada di tab Riwayat
+    List<Loan> list = aktifLoans; // base = hanya yang dipinjam
+    if (_filterStatus == 'terlambat') {
+      list = aktifLoans.where((l) => l.isTerlambat).toList();
     }
 
     final filtered = list.where((l) =>
@@ -577,7 +575,7 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
               TextField(
                 onChanged: (v) => setState(() => _searchLoan = v),
                 decoration: InputDecoration(
-                  hintText: 'Cari transaksi berdasarkan Nama Mahasiswa, NIM, atau No. Pinjam...',
+                  hintText: 'Cari berdasarkan Nama Mahasiswa, NIM, atau No. Pinjam...',
                   hintStyle: const TextStyle(fontSize: 12.5, color: kTextSubtle),
                   prefixIcon: const Icon(Icons.search, size: 18, color: kTextMuted),
                   filled: true,
@@ -593,12 +591,10 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _filterChip(label: 'Semua (${_loans.length})', value: 'semua'),
-                    const SizedBox(width: 8),
-                    _filterChip(label: 'Sedang Dipinjam (${aktifLoans.length})', value: 'dipinjam'),
+                    _filterChip(label: 'Aktif (${aktifLoans.length})', value: 'dipinjam'),
                     const SizedBox(width: 8),
                     _filterChip(
-                      label: 'Terlambat (${_loans.where((l) => l.isTerlambat).length})',
+                      label: 'Terlambat (${aktifLoans.where((l) => l.isTerlambat).length})',
                       value: 'terlambat',
                       color: kColorDanger,
                     ),
@@ -614,10 +610,14 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
           child: _loading
               ? const LoadingWidget(message: 'Memuat data peminjaman...')
               : filtered.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.assignment_outlined,
-                      title: 'Tidak ada data peminjaman',
-                      subtitle: 'Catat transaksi peminjaman baru saat mahasiswa datang ke laboratorium',
+                      title: aktifLoans.isEmpty
+                          ? 'Tidak ada peminjaman aktif'
+                          : 'Tidak ada hasil pencarian',
+                      subtitle: aktifLoans.isEmpty
+                          ? 'Semua alat telah dikembalikan. Riwayat tersedia di tab Riwayat.'
+                          : 'Coba kata kunci lain',
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchData,

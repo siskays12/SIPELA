@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart' show Share, XFile;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:excel/excel.dart' as ex;
@@ -23,7 +23,8 @@ class _LaporanScreenState extends State<LaporanScreen> {
   List<Tool> _tools = [];
   int _customerCount = 0;
   bool _loading = true;
-  bool _exporting = false;
+  bool _exportingPdf = false;
+  bool _exportingExcel = false;
 
   @override
   void initState() {
@@ -57,7 +58,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
 
   // ── Export PDF ─────────────────────────────────────────────────────────────
   Future<void> _exportPdf() async {
-    setState(() => _exporting = true);
+    setState(() => _exportingPdf = true);
     try {
       final totalPinjam = _loans.length;
       final sedangDipinjam = _loans.where((l) => l.status == 'dipinjam').length;
@@ -91,33 +92,54 @@ class _LaporanScreenState extends State<LaporanScreen> {
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(32),
           build: (pw.Context ctx) => [
-            // Header
-            pw.Container(
-              padding: const pw.EdgeInsets.all(16),
-              decoration: const pw.BoxDecoration(
-                color: PdfColors.blue800,
-                borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
-              ),
+            // Header Resmi / Kop Laporan (Rapi, Di Tengah, Tanpa Kotak-Kotak)
+            pw.Center(
               child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Text(
-                    'SIPELA — Statistik & Laporan Lab',
+                    'UPT LABORATORIUM & SARANA PRASARANA',
                     style: pw.TextStyle(
-                      fontSize: 16,
+                      fontSize: 11,
                       fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.white,
+                      letterSpacing: 1.2,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Text(
+                    'SISTEM INFORMASI PEMINJAMAN ALAT (SIPELA)',
+                    style: pw.TextStyle(
+                      fontSize: 15,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blue900,
                     ),
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'UPT Laboratorium  •  Dicetak: $tanggalCetak',
-                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.white),
+                    'REKAPITULASI LAPORAN & STATISTIK LABORATORIUM',
+                    style: pw.TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
                   ),
+                  pw.SizedBox(height: 3),
+                  pw.Text(
+                    'Waktu Cetak: $tanggalCetak',
+                    style: const pw.TextStyle(
+                      fontSize: 8.5,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Divider(thickness: 1.5, color: PdfColors.blue900),
+                  pw.SizedBox(height: 1),
+                  pw.Divider(thickness: 0.5, color: PdfColors.grey400),
                 ],
               ),
             ),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 16),
 
             // Ringkasan Metrik
             pw.Text('Ringkasan Statistik',
@@ -227,22 +249,20 @@ class _LaporanScreenState extends State<LaporanScreen> {
       final file = File('${dir.path}/laporan_sipela_${now.millisecondsSinceEpoch}.pdf');
       await file.writeAsBytes(await pdf.save());
 
-      await SharePlus.instance.share(
-        ShareParams(
-          text: 'Laporan SIPELA',
-          files: [XFile(file.path)],
-        ),
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Laporan SIPELA',
       );
     } catch (e) {
       if (mounted) showError(context, 'Gagal ekspor PDF: $e');
     } finally {
-      if (mounted) setState(() => _exporting = false);
+      if (mounted) setState(() => _exportingPdf = false);
     }
   }
 
   // ── Export Excel ───────────────────────────────────────────────────────────
   Future<void> _exportExcel() async {
-    setState(() => _exporting = true);
+    setState(() => _exportingExcel = true);
     try {
       final excel = ex.Excel.createExcel();
 
@@ -271,9 +291,9 @@ class _LaporanScreenState extends State<LaporanScreen> {
       ];
       for (var i = 0; i < statsRows.length; i++) {
         statSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
-          ..value = ex.TextCellValue(statsRows[i][0] as String);
+          .value = ex.TextCellValue(statsRows[i][0] as String);
         statSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
-          ..value = ex.IntCellValue(statsRows[i][1] as int);
+          .value = ex.IntCellValue(statsRows[i][1] as int);
       }
 
       // Sheet 2: Inventaris
@@ -283,17 +303,17 @@ class _LaporanScreenState extends State<LaporanScreen> {
         final t = _tools[i];
         final row = i + 1;
         invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          ..value = ex.IntCellValue(t.idTool);
+          .value = ex.IntCellValue(t.idTool);
         invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-          ..value = ex.TextCellValue(t.kodeAlat);
+          .value = ex.TextCellValue(t.kodeAlat);
         invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
-          ..value = ex.TextCellValue(t.namaAlat);
+          .value = ex.TextCellValue(t.namaAlat);
         invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
-          ..value = ex.IntCellValue(t.stokTotal);
+          .value = ex.IntCellValue(t.stokTotal);
         invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
-          ..value = ex.IntCellValue(t.stokTersedia);
+          .value = ex.IntCellValue(t.stokTersedia);
         invSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row))
-          ..value = ex.TextCellValue(t.kondisi);
+          .value = ex.TextCellValue(t.kondisi);
       }
 
       // Sheet 3: Riwayat Peminjaman
@@ -306,19 +326,19 @@ class _LaporanScreenState extends State<LaporanScreen> {
         final l = _loans[i];
         final row = i + 1;
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          ..value = ex.IntCellValue(l.idLoan);
+          .value = ex.IntCellValue(l.idLoan);
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-          ..value = ex.TextCellValue(l.namaMahasiswa);
+          .value = ex.TextCellValue(l.namaMahasiswa);
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
-          ..value = ex.TextCellValue(l.nimMahasiswa);
+          .value = ex.TextCellValue(l.nimMahasiswa);
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
-          ..value = ex.TextCellValue(l.prodiMahasiswa);
+          .value = ex.TextCellValue(l.prodiMahasiswa);
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
-          ..value = ex.TextCellValue(formatDate(l.tanggalPinjam));
+          .value = ex.TextCellValue(formatDate(l.tanggalPinjam));
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row))
-          ..value = ex.TextCellValue(formatDate(l.tanggalRencanaKembali));
+          .value = ex.TextCellValue(formatDate(l.tanggalRencanaKembali));
         loanSheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: row))
-          ..value = ex.TextCellValue(l.status);
+          .value = ex.TextCellValue(l.status);
       }
 
       final now = DateTime.now();
@@ -329,16 +349,14 @@ class _LaporanScreenState extends State<LaporanScreen> {
       final file = File('${dir.path}/laporan_sipela_${now.millisecondsSinceEpoch}.xlsx');
       await file.writeAsBytes(fileBytes);
 
-      await SharePlus.instance.share(
-        ShareParams(
-          text: 'Laporan SIPELA Excel',
-          files: [XFile(file.path)],
-        ),
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Laporan SIPELA Excel',
       );
     } catch (e) {
       if (mounted) showError(context, 'Gagal ekspor Excel: $e');
     } finally {
-      if (mounted) setState(() => _exporting = false);
+      if (mounted) setState(() => _exportingExcel = false);
     }
   }
 
@@ -371,7 +389,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
   void _excelHeader(ex.Sheet sheet, int row, List<String> headers) {
     for (var i = 0; i < headers.length; i++) {
       sheet.cell(ex.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row))
-        ..value = ex.TextCellValue(headers[i]);
+        .value = ex.TextCellValue(headers[i]);
     }
   }
 
@@ -456,12 +474,12 @@ class _LaporanScreenState extends State<LaporanScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _exporting ? null : _exportPdf,
-                      icon: _exporting
+                      onPressed: (_exportingPdf || _exportingExcel) ? null : _exportPdf,
+                      icon: _exportingPdf
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFDC2626)),
                             )
                           : const Icon(Icons.picture_as_pdf_outlined, size: 16),
                       label: const Text('Ekspor PDF', style: TextStyle(fontSize: 12.5)),
@@ -476,12 +494,12 @@ class _LaporanScreenState extends State<LaporanScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _exporting ? null : _exportExcel,
-                      icon: _exporting
+                      onPressed: (_exportingPdf || _exportingExcel) ? null : _exportExcel,
+                      icon: _exportingExcel
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF16A34A)),
                             )
                           : const Icon(Icons.table_chart_outlined, size: 16),
                       label: const Text('Ekspor Excel', style: TextStyle(fontSize: 12.5)),
