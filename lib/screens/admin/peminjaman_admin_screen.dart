@@ -125,22 +125,29 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                   children: [
                     // ── Header ────────────────────────────────────────────
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Pencatatan Peminjaman Alat',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kTextMain),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Isi data peminjam dan alat yang langsung diserahkan',
-                              style: TextStyle(fontSize: 12, color: kTextMuted),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Pencatatan Peminjaman Alat',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kTextMain),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Isi data peminjam dan alat yang langsung diserahkan',
+                                style: TextStyle(fontSize: 11.5, color: kTextMuted),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.close, size: 20, color: kTextMuted),
                           onPressed: () => Navigator.pop(ctx),
@@ -355,10 +362,10 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Isi nama alat' : null,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    // Jumlah
+                                    const SizedBox(width: 6),
+                                    // Jumlah — pakai Flexible agar tidak overflow
                                     SizedBox(
-                                      width: 72,
+                                      width: 64,
                                       child: TextFormField(
                                         controller: item.jumlahCtrl,
                                         keyboardType: TextInputType.number,
@@ -367,7 +374,7 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                                           labelText: 'Jml',
                                           labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
                                           isDense: true,
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
                                           filled: true,
                                           fillColor: Colors.white,
