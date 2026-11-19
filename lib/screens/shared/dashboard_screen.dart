@@ -256,9 +256,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  '${pinjamanAktif.length} transaksi',
-                  style: const TextStyle(fontSize: 11, color: kBrandAccent, fontWeight: FontWeight.w600),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: kBrandAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${pinjamanAktif.length} transaksi',
+                    style: const TextStyle(fontSize: 11, color: kBrandAccent, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ],
             ),
