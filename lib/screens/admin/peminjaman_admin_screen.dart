@@ -873,156 +873,24 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
   }
 
   Widget _buildLoanActions(Loan loan) {
-    switch (loan.status) {
-      case 'menunggu':
-        return Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _prosesApproval(loan, 'tolak'),
-                icon: const Icon(Icons.close, size: 15, color: kColorDanger),
-                label: const Text('Tolak',
-                    style: TextStyle(color: kColorDanger, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: kColorDanger),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton.icon(
-                onPressed: () => _prosesApproval(loan, 'setujui'),
-                icon: const Icon(Icons.check, size: 15, color: Colors.white),
-                label: const Text('Setujui',
-                    style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kColorSuccess,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ),
-          ],
-        );
-
-      case 'disetujui':
-        return SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _prosesHandover(loan),
-            icon: const Icon(Icons.outbox_rounded, size: 15, color: Colors.white),
-            label: const Text('Serahkan Alat',
-                style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kBrandPrimary,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
+    if (loan.status == 'dipinjam') {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _prosesKembali(loan),
+          icon: const Icon(Icons.assignment_return_outlined, size: 15, color: Colors.white),
+          label: const Text('Proses Pengembalian',
+              style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kColorSuccess,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-        );
-
-      case 'dipinjam':
-        return SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _prosesKembali(loan),
-            icon: const Icon(Icons.assignment_return_outlined, size: 15, color: Colors.white),
-            label: const Text('Proses Pengembalian',
-                style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kColorSuccess,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-        );
-
-      default:
-        return const SizedBox.shrink();
+        ),
+      );
     }
-  }
-
-  Future<void> _prosesApproval(Loan loan, String action) async {
-    final label = action == 'setujui' ? 'menyetujui' : 'menolak';
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Konfirmasi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-        content: Text('Yakin ingin $label peminjaman #${loan.idLoan}?',
-            style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Batal', style: TextStyle(color: kTextMuted))),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: action == 'setujui' ? kColorSuccess : kColorDanger,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
-            child: Text(action == 'setujui' ? 'Setujui' : 'Tolak',
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    try {
-      await ApiService.patch('/loans/${loan.idLoan}/approval', {'action': action});
-      if (mounted) {
-        showSuccess(context, action == 'setujui'
-            ? 'Peminjaman #${loan.idLoan} disetujui'
-            : 'Peminjaman #${loan.idLoan} ditolak');
-        _fetchData();
-      }
-    } catch (e) {
-      if (mounted) showError(context, e.toString());
-    }
-  }
-
-  Future<void> _prosesHandover(Loan loan) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Serahkan Alat', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-        content: Text(
-            'Konfirmasi alat untuk peminjaman #${loan.idLoan} sudah diserahkan ke mahasiswa?',
-            style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Batal', style: TextStyle(color: kTextMuted))),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kBrandPrimary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
-            child: const Text('Ya, Serahkan', style: TextStyle(color: Colors.white, fontSize: 13)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    try {
-      await ApiService.patch('/loans/${loan.idLoan}/handover', {});
-      if (mounted) {
-        showSuccess(context, 'Alat berhasil diserahkan untuk peminjaman #${loan.idLoan}');
-        _fetchData();
-      }
-    } catch (e) {
-      if (mounted) showError(context, e.toString());
-    }
+    return const SizedBox.shrink();
   }
 
   Future<void> _prosesKembali(Loan loan) async {
