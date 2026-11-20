@@ -15,6 +15,39 @@ int? _safeNullableInt(dynamic val) {
   return int.tryParse(val.toString());
 }
 
+List<dynamic> _parseJsonList(dynamic val) {
+  if (val == null) return [];
+  if (val is List) return val;
+  if (val is String) {
+    var str = val.trim();
+    if (str.isEmpty || str == '[]' || str == 'null') return [];
+
+    // 1. Coba decode JSON standar (double quotes)
+    try {
+      var decoded = jsonDecode(str);
+      while (decoded is String) {
+        decoded = jsonDecode(decoded);
+      }
+      if (decoded is List) return decoded;
+    } catch (_) {}
+
+    // 2. Coba sanitasi jika format Python repr (single quotes & None/True/False)
+    try {
+      var sanitized = str
+          .replaceAll(RegExp(r'\bNone\b'), 'null')
+          .replaceAll(RegExp(r'\bTrue\b'), 'true')
+          .replaceAll(RegExp(r'\bFalse\b'), 'false')
+          .replaceAll("'", '"');
+      var decoded = jsonDecode(sanitized);
+      while (decoded is String) {
+        decoded = jsonDecode(decoded);
+      }
+      if (decoded is List) return decoded;
+    } catch (_) {}
+  }
+  return [];
+}
+
 class ItemPinjaman {
   final int? idTool;      // null jika input free-text
   final String? namaAlat; // diisi jika input free-text
@@ -74,15 +107,7 @@ class Loan {
   }
 
   factory Loan.fromJson(Map<String, dynamic> json) {
-    dynamic rawAlat = json['daftar_alat'];
-    if (rawAlat is String) {
-      try {
-        rawAlat = jsonDecode(rawAlat);
-      } catch (_) {
-        rawAlat = [];
-      }
-    }
-    final list = rawAlat is List ? rawAlat : [];
+    final list = _parseJsonList(json['daftar_alat']);
 
     return Loan(
       idLoan: _safeInt(json['id_loan'], 0),

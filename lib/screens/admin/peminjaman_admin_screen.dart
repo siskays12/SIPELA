@@ -441,7 +441,11 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
 
                               // 2. Catat peminjaman dengan nama alat free-text
                               final daftarAlat = borrowItems
-                                  .map((i) => {'nama_alat': i.namaAlat.trim(), 'jumlah': i.jumlah})
+                                  .map((i) => {
+                                        'id_tool': 0,
+                                        'nama_alat': i.namaAlat.trim(),
+                                        'jumlah': i.jumlah,
+                                      })
                                   .toList();
 
                               await ApiService.post('/loans', {
@@ -914,6 +918,19 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
         kondisi: 'baik',
       );
     }).toList();
+
+    // Fallback otomatis jika data pinjaman lama tersimpan tanpa daftar alat
+    if (items.isEmpty) {
+      items.add(_ReturnItem(
+        idTool: 0,
+        namaAlat: (loan.keperluan != null && loan.keperluan!.isNotEmpty)
+            ? 'Alat (${loan.keperluan})'
+            : 'Alat Peminjaman #${loan.idLoan}',
+        kodeAlat: '-',
+        jumlah: 1,
+        kondisi: 'baik',
+      ));
+    }
 
     final catatanCtrl = TextEditingController();
     bool saving = false;

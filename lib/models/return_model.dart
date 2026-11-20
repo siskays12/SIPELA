@@ -8,6 +8,39 @@ int _safeInt(dynamic val, [int fallback = 0]) {
   return int.tryParse(val.toString()) ?? fallback;
 }
 
+List<dynamic> _parseJsonList(dynamic val) {
+  if (val == null) return [];
+  if (val is List) return val;
+  if (val is String) {
+    var str = val.trim();
+    if (str.isEmpty || str == '[]' || str == 'null') return [];
+
+    // 1. Coba decode JSON standar (double quotes)
+    try {
+      var decoded = jsonDecode(str);
+      while (decoded is String) {
+        decoded = jsonDecode(decoded);
+      }
+      if (decoded is List) return decoded;
+    } catch (_) {}
+
+    // 2. Coba sanitasi jika format Python repr (single quotes & None/True/False)
+    try {
+      var sanitized = str
+          .replaceAll(RegExp(r'\bNone\b'), 'null')
+          .replaceAll(RegExp(r'\bTrue\b'), 'true')
+          .replaceAll(RegExp(r'\bFalse\b'), 'false')
+          .replaceAll("'", '"');
+      var decoded = jsonDecode(sanitized);
+      while (decoded is String) {
+        decoded = jsonDecode(decoded);
+      }
+      if (decoded is List) return decoded;
+    } catch (_) {}
+  }
+  return [];
+}
+
 class ItemPengembalian {
   final int idTool;
   final String? namaAlat;
@@ -55,15 +88,7 @@ class Pengembalian {
   });
 
   factory Pengembalian.fromJson(Map<String, dynamic> json) {
-    dynamic rawDetail = json['detail_pengembalian'];
-    if (rawDetail is String) {
-      try {
-        rawDetail = jsonDecode(rawDetail);
-      } catch (_) {
-        rawDetail = [];
-      }
-    }
-    final list = rawDetail is List ? rawDetail : [];
+    final list = _parseJsonList(json['detail_pengembalian']);
 
     return Pengembalian(
       idReturn: _safeInt(json['id_return'], 0),
