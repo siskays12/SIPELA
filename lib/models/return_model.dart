@@ -70,6 +70,61 @@ class ItemPengembalian {
       };
 }
 
+List<ItemPengembalian> _parsePengembalianItems(dynamic raw) {
+  if (raw == null) return [];
+
+  // 1. Jika raw adalah list of maps (JSON)
+  final listJson = _parseJsonList(raw);
+  if (listJson.isNotEmpty) {
+    return listJson
+        .map((e) => ItemPengembalian.fromJson(
+              e is Map<String, dynamic>
+                  ? e
+                  : Map<String, dynamic>.from(e as Map),
+            ))
+        .toList();
+  }
+
+  // 2. Jika raw adalah String format teks deskriptif dari backend GitHub:
+  // Contoh: "Jangka Sorong (1 unit) - Kondisi: Baik, Multimeter (1 unit) - Kondisi: Rusak"
+  if (raw is String && raw.trim().isNotEmpty) {
+    final str = raw.trim();
+    if (str == '[]' || str == 'null') return [];
+
+    final parts = str.split(', ');
+    final result = <ItemPengembalian>[];
+    final regex = RegExp(r'^(.*?)\s*\((\d+)\s*unit\)\s*-\s*Kondisi:\s*(.*)$', caseSensitive: false);
+
+    for (final part in parts) {
+      final p = part.trim();
+      if (p.isEmpty) continue;
+      final match = regex.firstMatch(p);
+      if (match != null) {
+        final nama = match.group(1)?.trim();
+        final jml = int.tryParse(match.group(2) ?? '1') ?? 1;
+        final kondisi = (match.group(3)?.trim() ?? 'baik').toLowerCase();
+        result.add(ItemPengembalian(
+          idTool: 0,
+          namaAlat: nama,
+          jumlah: jml,
+          kondisi: kondisi,
+        ));
+      } else {
+        result.add(ItemPengembalian(
+          idTool: 0,
+          namaAlat: p,
+          jumlah: 1,
+          kondisi: 'baik',
+        ));
+      }
+    }
+
+    if (result.isNotEmpty) return result;
+  }
+
+  return [];
+}
+
 class Pengembalian {
   final int idReturn;
   final int idLoan;
@@ -87,22 +142,12 @@ class Pengembalian {
     required this.detailPengembalian,
   });
 
-  factory Pengembalian.fromJson(Map<String, dynamic> json) {
-    final list = _parseJsonList(json['detail_pengembalian']);
-
-    return Pengembalian(
-      idReturn: _safeInt(json['id_return'], 0),
-      idLoan: _safeInt(json['id_loan'], 0),
-      idAdmin: _safeInt(json['id_admin'], 1),
-      tanggalPengembalian: json['tanggal_pengembalian']?.toString(),
-      catatan: json['catatan']?.toString(),
-      detailPengembalian: list
-          .map((e) => ItemPengembalian.fromJson(
-                e is Map<String, dynamic>
-                    ? e
-                    : Map<String, dynamic>.from(e as Map),
-              ))
-          .toList(),
-    );
-  }
+  factory Pengembalian.fromJson(Map<String, dynamic> json) => Pengembalian(
+        idReturn: _safeInt(json['id_return'], 0),
+        idLoan: _safeInt(json['id_loan'], 0),
+        idAdmin: _safeInt(json['id_admin'], 1),
+        tanggalPengembalian: json['tanggal_pengembalian']?.toString(),
+        catatan: json['catatan']?.toString(),
+        detailPengembalian: _parsePengembalianItems(json['detail_pengembalian']),
+      );
 }
