@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const bool useMockData = false;
-const String baseUrl = 'http://10.10.11.248:8000';
+const String baseUrl = 'http://10.91.202.88:8000';
 
 class ApiService {
   // ─── Auth Storage ─────────────────────────────
