@@ -189,16 +189,6 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                                   ),
                                   const SizedBox(height: 12),
 
-                                  // NIM
-                                  const Text('NIM *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMain)),
-                                  const SizedBox(height: 4),
-                                  TextFormField(
-                                    controller: nimCtrl,
-                                    decoration: _inputDec('Contoh: 2200101'),
-                                    validator: (v) => v!.trim().isEmpty ? 'NIM wajib diisi' : null,
-                                  ),
-                                  const SizedBox(height: 10),
-
                                   // Nama Lengkap
                                   const Text('Nama Lengkap *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMain)),
                                   const SizedBox(height: 4),
@@ -206,6 +196,16 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                                     controller: namaCtrl,
                                     decoration: _inputDec('Contoh: Budi Santoso'),
                                     validator: (v) => v!.trim().isEmpty ? 'Nama wajib diisi' : null,
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // NIM
+                                  const Text('NIM *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: kTextMain)),
+                                  const SizedBox(height: 4),
+                                  TextFormField(
+                                    controller: nimCtrl,
+                                    decoration: _inputDec('Contoh: 2200101'),
+                                    validator: (v) => v!.trim().isEmpty ? 'NIM wajib diisi' : null,
                                   ),
                                   const SizedBox(height: 10),
 

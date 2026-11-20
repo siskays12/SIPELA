@@ -105,21 +105,21 @@ class _MahasiswaScreenState extends State<MahasiswaScreen> {
                     const Divider(height: 1, color: kBorder),
                     const SizedBox(height: 14),
 
-                    const Text('NIM (Nomor Induk Mahasiswa) *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
-                    const SizedBox(height: 4),
-                    TextFormField(
-                      controller: nimCtrl,
-                      decoration: _dialogInput('Contoh: 2200101'),
-                      validator: (v) => v!.trim().isEmpty ? 'NIM wajib diisi' : null,
-                    ),
-                    const SizedBox(height: 12),
-
                     const Text('Nama Lengkap Mahasiswa *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: namaCtrl,
                       decoration: _dialogInput('Contoh: Budi Santoso'),
                       validator: (v) => v!.trim().isEmpty ? 'Nama wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    const Text('NIM (Nomor Induk Mahasiswa) *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain)),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      controller: nimCtrl,
+                      decoration: _dialogInput('Contoh: 2200101'),
+                      validator: (v) => v!.trim().isEmpty ? 'NIM wajib diisi' : null,
                     ),
                     const SizedBox(height: 12),
 
