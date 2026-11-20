@@ -1,4 +1,5 @@
 // lib/models/return_model.dart
+import 'dart:convert';
 
 int _safeInt(dynamic val, [int fallback = 0]) {
   if (val == null) return fallback;
@@ -53,14 +54,30 @@ class Pengembalian {
     required this.detailPengembalian,
   });
 
-  factory Pengembalian.fromJson(Map<String, dynamic> json) => Pengembalian(
-        idReturn: _safeInt(json['id_return'], 0),
-        idLoan: _safeInt(json['id_loan'], 0),
-        idAdmin: _safeInt(json['id_admin'], 1),
-        tanggalPengembalian: json['tanggal_pengembalian'],
-        catatan: json['catatan'],
-        detailPengembalian: (json['detail_pengembalian'] as List? ?? [])
-            .map((e) => ItemPengembalian.fromJson(e))
-            .toList(),
-      );
+  factory Pengembalian.fromJson(Map<String, dynamic> json) {
+    dynamic rawDetail = json['detail_pengembalian'];
+    if (rawDetail is String) {
+      try {
+        rawDetail = jsonDecode(rawDetail);
+      } catch (_) {
+        rawDetail = [];
+      }
+    }
+    final list = rawDetail is List ? rawDetail : [];
+
+    return Pengembalian(
+      idReturn: _safeInt(json['id_return'], 0),
+      idLoan: _safeInt(json['id_loan'], 0),
+      idAdmin: _safeInt(json['id_admin'], 1),
+      tanggalPengembalian: json['tanggal_pengembalian']?.toString(),
+      catatan: json['catatan']?.toString(),
+      detailPengembalian: list
+          .map((e) => ItemPengembalian.fromJson(
+                e is Map<String, dynamic>
+                    ? e
+                    : Map<String, dynamic>.from(e as Map),
+              ))
+          .toList(),
+    );
+  }
 }

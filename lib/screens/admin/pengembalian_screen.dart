@@ -35,19 +35,25 @@ class _PengembalianScreenState extends State<PengembalianScreen> {
       final loansData = await ApiService.get('/loans');
 
       final toolMap = <int, Tool>{};
-      for (final t in toolsData as List) {
-        final tool = Tool.fromJson(t);
-        toolMap[tool.idTool] = tool;
+      if (toolsData is List) {
+        for (final t in toolsData) {
+          final tool = Tool.fromJson(t);
+          toolMap[tool.idTool] = tool;
+        }
       }
 
       final loanMap = <int, Loan>{};
-      for (final l in loansData as List) {
-        final loan = Loan.fromJson(l);
-        loanMap[loan.idLoan] = loan;
+      if (loansData is List) {
+        for (final l in loansData) {
+          final loan = Loan.fromJson(l);
+          loanMap[loan.idLoan] = loan;
+        }
       }
 
       setState(() {
-        _returns = (returnsData as List).map((e) => Pengembalian.fromJson(e)).toList()
+        _returns = (returnsData is List ? returnsData : [])
+            .map((e) => Pengembalian.fromJson(e))
+            .toList()
           ..sort((a, b) => b.idReturn.compareTo(a.idReturn));
         _toolsMap = toolMap;
         _loansMap = loanMap;

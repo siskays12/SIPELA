@@ -1,4 +1,5 @@
 // lib/models/loan_model.dart
+import 'dart:convert';
 
 int _safeInt(dynamic val, [int fallback = 0]) {
   if (val == null) return fallback;
@@ -72,21 +73,39 @@ class Loan {
     }
   }
 
-  factory Loan.fromJson(Map<String, dynamic> json) => Loan(
-        idLoan: _safeInt(json['id_loan'], 0),
-        idCustomer: _safeInt(json['id_customer'], 0),
-        namaMahasiswa: json['nama_mahasiswa']?.toString() ?? '',
-        nimMahasiswa: json['nim_mahasiswa']?.toString() ?? '',
-        prodiMahasiswa: json['prodi_mahasiswa']?.toString() ?? '',
-        tanggalPinjam: json['tanggal_pinjam']?.toString() ?? json['tanggal_pengajuan']?.toString() ?? DateTime.now().toIso8601String(),
-        tanggalRencanaKembali: json['tanggal_rencana_kembali']?.toString() ?? '',
-        status: json['status']?.toString() ?? 'dipinjam',
-        keperluan: json['keperluan']?.toString(),
-        catatanAdmin: json['catatan_admin']?.toString(),
-        daftarAlat: (json['daftar_alat'] as List? ?? [])
-            .map((e) => ItemPinjaman.fromJson(e))
-            .toList(),
-      );
+  factory Loan.fromJson(Map<String, dynamic> json) {
+    dynamic rawAlat = json['daftar_alat'];
+    if (rawAlat is String) {
+      try {
+        rawAlat = jsonDecode(rawAlat);
+      } catch (_) {
+        rawAlat = [];
+      }
+    }
+    final list = rawAlat is List ? rawAlat : [];
+
+    return Loan(
+      idLoan: _safeInt(json['id_loan'], 0),
+      idCustomer: _safeInt(json['id_customer'], 0),
+      namaMahasiswa: json['nama_mahasiswa']?.toString() ?? '',
+      nimMahasiswa: json['nim_mahasiswa']?.toString() ?? '',
+      prodiMahasiswa: json['prodi_mahasiswa']?.toString() ?? '',
+      tanggalPinjam: json['tanggal_pinjam']?.toString() ??
+          json['tanggal_pengajuan']?.toString() ??
+          DateTime.now().toIso8601String(),
+      tanggalRencanaKembali: json['tanggal_rencana_kembali']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'dipinjam',
+      keperluan: json['keperluan']?.toString(),
+      catatanAdmin: json['catatan_admin']?.toString(),
+      daftarAlat: list
+          .map((e) => ItemPinjaman.fromJson(
+                e is Map<String, dynamic>
+                    ? e
+                    : Map<String, dynamic>.from(e as Map),
+              ))
+          .toList(),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id_loan': idLoan,

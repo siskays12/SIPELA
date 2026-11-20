@@ -70,14 +70,14 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
       final loansData = await ApiService.get('/loans');
       final toolsData = await ApiService.get('/tools');
 
-      final toolsList = (toolsData as List).map((e) => Tool.fromJson(e)).toList();
+      final toolsList = (toolsData is List ? toolsData : []).map((e) => Tool.fromJson(e)).toList();
       final map = <int, Tool>{};
       for (final t in toolsList) {
         map[t.idTool] = t;
       }
 
       setState(() {
-        _loans = (loansData as List).map((e) => Loan.fromJson(e)).toList()
+        _loans = (loansData is List ? loansData : []).map((e) => Loan.fromJson(e)).toList()
           ..sort((a, b) => b.idLoan.compareTo(a.idLoan));
         _toolsMap = map;
         _loading = false;
