@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: Border.all(color: const Color(0xFFBFDBFE)),
                     ),
                     child: const Text(
-                      'POLITEKNIK NEGERI',
+                      'Politeknik Jambi',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Sistem Peminjaman Alat Laboratorium',
+                    'Sistem Informasi Peminjaman Alat Kampus',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12.5, color: kTextMuted),
                   ),
@@ -129,12 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Masuk Petugas Laboratorium',
+                            'Masukan Username dan Password Anda',
                             style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: kTextMain),
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Username Petugas',
+                            'Username',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMain),
                           ),
                           const SizedBox(height: 5),
@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Portal Khusus Petugas / Admin Laboratorium',
+                    'Silahkan Masukan Nama Pengguna dan Kata Sandi Anda',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11.5, color: kTextSubtle),
                   ),

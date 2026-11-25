@@ -1,5 +1,5 @@
 name: sistem_pinjam_alat
-description: "SIPELA - Sistem Peminjaman Alat Laboratorium"
+description: "SIPELA - Sistem Informasi Peminjaman Alat Kampus"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  http: ^1.2.0
+  http: ^1.6.0
   shared_preferences: ^2.3.0
   intl: ^0.19.0
   pdf: ^3.11.0

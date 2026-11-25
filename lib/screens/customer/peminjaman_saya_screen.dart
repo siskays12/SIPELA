@@ -76,7 +76,7 @@ class _PeminjamanSayaScreenState extends State<PeminjamanSayaScreen>
     }
 
     if (availableTools.isEmpty) {
-      if (mounted) showError(context, 'Tidak ada alat laboratorium yang tersedia saat ini.');
+      if (mounted) showError(context, 'Tidak ada alat yang tersedia saat ini.');
       return;
     }
     if (!mounted) return;
@@ -198,7 +198,7 @@ class _PeminjamanSayaScreenState extends State<PeminjamanSayaScreen>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Daftar Alat Laboratorium', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextMain)),
+                                const Text('Daftar Alat', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextMain)),
                                 InkWell(
                                   onTap: () => setS(() => items.add(_LoanItem(tools: availableTools))),
                                   child: Container(
@@ -403,7 +403,7 @@ class _PeminjamanSayaScreenState extends State<PeminjamanSayaScreen>
       return EmptyState(
         icon: Icons.assignment_outlined,
         title: 'Belum ada data peminjaman',
-        subtitle: 'Ajukan peminjaman alat praktikum kapan pun dibutuhkan',
+        subtitle: 'Ajukan peminjaman alat kapan pun dibutuhkan',
         action: AppButton(
           label: 'Ajukan Pinjam Sekarang',
           icon: Icons.add,
@@ -495,7 +495,7 @@ class _PeminjamanSayaScreenState extends State<PeminjamanSayaScreen>
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Pesan Lab: ${loan.catatanAdmin}',
+                      'Pesan Petugas: ${loan.catatanAdmin}',
                       style: const TextStyle(fontSize: 11.5, color: kColorWarning),
                     ),
                   ),

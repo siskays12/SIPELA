@@ -139,12 +139,12 @@ class _AlatScreenState extends State<AlatScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            existing == null ? 'Tambah Alat Laboratorium' : 'Edit Data Alat',
+                            existing == null ? 'Tambah Data Alat' : 'Edit Data Alat',
                             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kTextMain),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            existing == null ? 'Kelola inventaris fisik alat lab' : 'Perbarui data spesifikasi dan stok',
+                            existing == null ? 'Kelola inventaris fisik alat kampus' : 'Perbarui data spesifikasi dan stok',
                             style: const TextStyle(fontSize: 12, color: kTextMuted),
                           ),
                         ],
@@ -465,7 +465,7 @@ class _AlatScreenState extends State<AlatScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Text('Hapus Alat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text('Hapus "${tool.namaAlat}" dari inventaris laboratorium?',
+        content: Text('Hapus "${tool.namaAlat}" dari inventaris alat?',
             style: const TextStyle(fontSize: 13, color: kTextMuted)),
         actions: [
           TextButton(
@@ -574,7 +574,7 @@ class _AlatScreenState extends State<AlatScreen> {
                     ? EmptyState(
                         icon: Icons.inventory_2_outlined,
                         title: 'Tidak ada data alat',
-                        subtitle: 'Alat laboratorium tidak ditemukan untuk filter ini',
+                        subtitle: 'Data alat tidak ditemukan untuk filter ini',
                         action: AppButton(
                           label: 'Tambah Alat Baru',
                           icon: Icons.add,

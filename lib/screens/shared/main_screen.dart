@@ -24,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<_NavItem> _navItems = const [
     _NavItem('Ringkasan', Icons.grid_view_outlined, Icons.grid_view, DashboardScreen()),
-    _NavItem('Alat Lab', Icons.inventory_2_outlined, Icons.inventory_2, AlatScreen()),
+    _NavItem('Data Alat', Icons.inventory_2_outlined, Icons.inventory_2, AlatScreen()),
     _NavItem('Peminjaman', Icons.assignment_outlined, Icons.assignment, PeminjamanAdminScreen()),
     _NavItem('Riwayat', Icons.history_outlined, Icons.history, PengembalianScreen()),
     _NavItem('Laporan', Icons.analytics_outlined, Icons.analytics, LaporanScreen()),
@@ -50,7 +50,7 @@ class _MainScreenState extends State<MainScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Text('Keluar Aplikasi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        content: const Text('Keluar dari sistem SIPELA Laboratorium?', style: TextStyle(fontSize: 13, color: kTextMuted)),
+        content: const Text('Keluar dari sistem SIPELA?', style: TextStyle(fontSize: 13, color: kTextMuted)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -118,7 +118,7 @@ class _MainScreenState extends State<MainScreen> {
                       child: const Icon(Icons.science, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 8),
-                    const Text('SIPELA LAB', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: kTextMain)),
+                    const Text('SIPELA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: kTextMain)),
                   ],
                 ),
               ),
@@ -188,7 +188,7 @@ class _MainScreenState extends State<MainScreen> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: kTextMain, letterSpacing: -0.3),
             ),
             const Text(
-              'SIPELA • UPT Laboratorium',
+              'Sistem Informasi Peminjaman Alat Kampus',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: kTextMuted),

@@ -117,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Icon(Icons.school, size: 13, color: Colors.white),
                                 SizedBox(width: 5),
                                 Text(
-                                  'UPT LABORATORIUM',
+                                  'SIPELA KAMPUS',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 10.5,
@@ -161,7 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Sistem Informasi Peminjaman Alat Laboratorium & Sarpras Kampus.',
+                        'Sistem Informasi Peminjaman Alat Kampus.',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.88),

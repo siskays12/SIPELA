@@ -1081,7 +1081,7 @@ class _PeminjamanAdminScreenState extends State<PeminjamanAdminScreen>
                                 ),
                               )),
                           const SizedBox(height: 10),
-                          const Text('Catatan Petugas Lab (Opsional):',
+                          const Text('Catatan Petugas (Opsional):',
                               style: TextStyle(
                                   fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextMain)),
                           const SizedBox(height: 6),

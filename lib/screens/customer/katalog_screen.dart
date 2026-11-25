@@ -157,7 +157,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                     _applyFilter();
                   },
                   decoration: InputDecoration(
-                    hintText: 'Cari alat laboratorium...',
+                    hintText: 'Cari alat...',
                     hintStyle: const TextStyle(fontSize: 13, color: kTextSubtle),
                     prefixIcon: const Icon(Icons.search, size: 18, color: kTextMuted),
                     filled: true,

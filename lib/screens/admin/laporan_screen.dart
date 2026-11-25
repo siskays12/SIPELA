@@ -98,7 +98,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Text(
-                    'UPT LABORATORIUM & SARANA PRASARANA',
+                    'SIPELA KAMPUS',
                     style: pw.TextStyle(
                       fontSize: 11,
                       fontWeight: pw.FontWeight.bold,
@@ -108,7 +108,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
                   ),
                   pw.SizedBox(height: 3),
                   pw.Text(
-                    'SISTEM INFORMASI PEMINJAMAN ALAT (SIPELA)',
+                    'SISTEM INFORMASI PEMINJAMAN ALAT KAMPUS',
                     style: pw.TextStyle(
                       fontSize: 15,
                       fontWeight: pw.FontWeight.bold,
@@ -117,7 +117,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'REKAPITULASI LAPORAN & STATISTIK LABORATORIUM',
+                    'REKAPITULASI LAPORAN & STATISTIK',
                     style: pw.TextStyle(
                       fontSize: 11.5,
                       fontWeight: pw.FontWeight.bold,
@@ -399,7 +399,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
     if (_loading) {
       return const Scaffold(
         backgroundColor: kBackground,
-        body: LoadingWidget(message: 'Memuat statistik & laporan lab...'),
+        body: LoadingWidget(message: 'Memuat statistik & laporan...'),
       );
     }
 
@@ -450,7 +450,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Statistik & Laporan Lab',
+                      'Statistik & Laporan',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kTextMain),
                     ),
                   ),
@@ -669,7 +669,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Center(
                           child: Text(
-                            'Belum ada data riwayat peminjaman alat lab.',
+                            'Belum ada data riwayat peminjaman alat.',
                             style: TextStyle(fontSize: 12, color: kTextMuted),
                           ),
                         ),
